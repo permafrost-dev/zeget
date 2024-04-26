@@ -58,18 +58,14 @@ tasks:
       - rm -f {{.DIST_TARGET_FILE}}
 
   lint:
-    dir: .
+    desc: 'Lints the code with golangci-lint and optionally: actionlint, shellcheck, typos'
     preconditions:
       - which golangci-lint
-      - test -f .golangci.yaml
-      - which typos
-      - which actionlint
-      - which shellcheck
     cmds:
       - golangci-lint run
-      - actionlint
-      - shellcheck ./.custom-hooks/*
-      - typos
+      - which actionlint >/dev/null && actionlint || echo "actionlint not found, skipping..."
+      - which shellcheck >/dev/null && shellcheck ./.custom-hooks/* || echo "shellcheck not found, skipping..."
+      - which typos >/dev/null && typos -v || echo "typos not found, skipping..."
 
   update-version-file:
     cmds:
