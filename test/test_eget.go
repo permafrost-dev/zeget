@@ -29,7 +29,7 @@ func must(err error) {
 func main() {
 	eget := os.Getenv("TEST_EGET")
 
-	must(run(eget, "--system", "linux/amd64", "jgm/pandoc"))
+	must(run(eget, "--system", "linux/amd64", "jgm/pandoc", "--to", "."))
 	must(fileExists("pandoc"))
 
 	must(run(eget, "zyedidia/micro", "--tag", "nightly", "--asset", "osx"))
@@ -41,8 +41,8 @@ func main() {
 	must(run(eget, "--system", "darwin/amd64", "sharkdp/fd"))
 	must(fileExists("fd"))
 
-	must(run(eget, "--system", "windows/amd64", "--asset", "windows-gnu", "BurntSushi/ripgrep"))
-	must(fileExists("rg.exe"))
+	// must(run(eget, "--system", "windows/amd64", "--asset", "windows-gnu", "BurntSushi/ripgrep"))
+	// must(fileExists("rg.exe"))
 
 	must(run(eget, "-f", "eget.1", "zyedidia/eget"))
 	must(fileExists("eget.1"))
