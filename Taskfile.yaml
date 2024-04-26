@@ -24,16 +24,30 @@ tasks:
 
   test:
     desc: Runs tests
+    dir: .
     cmds:
-      - go test -cover ./app
+      - cd app && go test -cover -v . && cd ..
+      - cd lib && go test -cover -v ./** && cd ..
+
+  test-coverage:
+    desc: Runs tests with coverage profiling
+    dir: .
+    cmds:
+      - cd app && go test -cover -coverprofile=../coverage-app.out -v . && cd ..
+      - cd lib && go test -cover -coverprofile=../coverage-lib.out -v ./** && cd ..
 
   build:
-    desc: Builds application
+    desc: Builds binary
     preconditions:
       - task: mod
+      - task: prepare-dist-folder
+    sources:
+      - ./lib/**/*.go
+      - ./app/*.go
+    generates:
+      - '{{.DIST_TARGET_FILE}}'
     cmds:
-      - task: build-eget
-      - task: copy-config-template-to-dist
+      - go build -trimpath -ldflags="-s -w -X main.Version={{.VERSION}}-{{.GIT_COMMIT}}" -o {{.DIST_TARGET_FILE}} {{.ENTRY_FILENAME}}
 
   clean:
     desc: Cleans up build artifacts
@@ -69,18 +83,6 @@ tasks:
       - mkdir -p {{.BUILD_OUTPUT_DIR}}
     status:
       - test -d {{.BUILD_OUTPUT_DIR}}
-
-  build-eget:
-    desc: Builds binary
-    preconditions:
-      - task: prepare-dist-folder
-    sources:
-      - ./lib/**/*.go
-      - ./app/*.go
-    generates:
-      - '{{.DIST_TARGET_FILE}}'
-    cmds:
-      - go build -trimpath -ldflags="-s -w -X main.Version={{.VERSION}}-{{.GIT_COMMIT}}" -o {{.DIST_TARGET_FILE}} {{.ENTRY_FILENAME}}
 
   autobuild:
     interactive: true

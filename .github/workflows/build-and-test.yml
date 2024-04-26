@@ -6,6 +6,7 @@ on:
     tags:
       - v*
   pull_request:
+    types: [opened, edited]
   pull_request_target:
     types: [opened, edited]
 
@@ -29,12 +30,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download and tidy Go modules
-        run: task mod
-
       - name: Build Application
-        id: build
-        run: task build-eget
+        run: task build
 
   run-tests:
     runs-on: ubuntu-latest
@@ -50,23 +47,23 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download and tidy Go modules
-        run: task mod
-
-      - name: Run functional test
-        env: 
-          EGET_CONFIG: eget.toml
-          EGET_BIN: ''
-          TEST_EGET: ../eget
-        run: go run test_eget.go
         
       - name: Run unit tests with coverage
-        run: cd app && go test -cover -coverprofile coverage.out -v .
+        run: task test-coverage
 
       - name: Upload coverage reports to Codecov
         if: ${{success()}}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.out
+          files: ./coverage-app.out,./coverage-lib.out
+
+      - name: Build application
+        run: task build
+
+      - name: Run functional test
+        env: 
+          EGET_CONFIG: eget.toml
+          EGET_BIN: ''
+          TEST_EGET: ../dist/eget
+        run: cd test && go run test_eget.go
