@@ -36,6 +36,11 @@ tasks:
       - cd app && go test -cover -coverprofile=../coverage-app.out -v . && cd ..
       - cd lib && go test -cover -coverprofile=../coverage-lib.out -v ./** && cd ..
 
+  fmt:
+    desc: Formats the code
+    cmds:
+      - gofmt -s -w .
+
   build:
     desc: Builds binary
     preconditions:
@@ -49,6 +54,23 @@ tasks:
     cmds:
       - go build -trimpath -ldflags="-s -w -X main.Version={{.VERSION}}-{{.GIT_COMMIT}}" -o {{.DIST_TARGET_FILE}} {{.ENTRY_FILENAME}}
 
+  build-docs:
+    desc: Builds documentation
+    preconditions:
+      - which pandoc
+    sources:
+      - man/eget.md
+    generates:
+      - eget.1
+    cmds:
+      - pandoc man/eget.md -s -t man -o eget.1
+
+  build-all:
+    desc: Builds everything
+    cmds:
+      - task build
+      - task build-docs
+
   clean:
     desc: Cleans up build artifacts
     preconditions:
@@ -56,6 +78,8 @@ tasks:
       - test -f {{.DIST_TARGET_FILE}}
     cmds:
       - rm -f {{.DIST_TARGET_FILE}}
+      - rm test/eget.1 || true 
+      - rm test/{fd,micro,nvim,pandoc,rg.exe} || true
 
   lint:
     desc: 'Lints the code with golangci-lint and optionally: actionlint, shellcheck, typos'
