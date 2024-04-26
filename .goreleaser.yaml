@@ -1,0 +1,48 @@
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+
+dist: build
+
+before:
+  hooks:
+    - task mod
+    - task update-version-file
+
+archives:
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+
+builds:
+  - id: eget
+    main: .
+    binary: eget
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.build={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    targets:
+      - linux_amd64
+      - darwin_arm64
+      - darwin_amd64
+      - windows_amd64
+
+# brews:
+#   -
+#     name: stackup
+#     homepage: 'https://github.com/permafrost-dev/homebrew-stackup'
+#     description: 'a single application to manage your entire dev stack'
+#     download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+#     custom_require: "lib/custom_download_strategy"
+#     license: MIT
+#     repository:
+#       owner: permafrost-dev
+#       name: homebrew-stackup
+#       branch: main
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256

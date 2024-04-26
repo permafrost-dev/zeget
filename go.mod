@@ -1,4 +1,4 @@
-module github.com/zyedidia/eget
+module github.com/permafrost-dev/eget
 
 go 1.18
 

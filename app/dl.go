@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"crypto/tls"
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/permafrost-dev/eget/lib/home"
 	pb "github.com/schollz/progressbar/v3"
-	"github.com/zyedidia/eget/home"
 )
 
 func tokenFrom(s string) (string, error) {

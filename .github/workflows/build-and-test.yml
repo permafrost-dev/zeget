@@ -1,0 +1,72 @@
+name: build-and-test
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  pull_request:
+  pull_request_target:
+    types: [opened, edited]
+
+env:
+  GO_VERSION: "~1.20"
+  GO111MODULE: "on"
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Task
+        uses: arduino/setup-task@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download and tidy Go modules
+        run: task mod
+
+      - name: Build Application
+        id: build
+        run: task build-eget
+
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Task
+        uses: arduino/setup-task@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download and tidy Go modules
+        run: task mod
+
+      - name: Run functional test
+        env: 
+          EGET_CONFIG: eget.toml
+          EGET_BIN: ''
+          TEST_EGET: ../eget
+        run: go run test_eget.go
+        
+      - name: Run unit tests with coverage
+        run: cd app && go test -cover -coverprofile coverage.out -v .
+
+      - name: Upload coverage reports to Codecov
+        if: ${{success()}}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out

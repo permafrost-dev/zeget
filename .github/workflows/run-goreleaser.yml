@@ -1,0 +1,46 @@
+name: run-goreleaser
+
+on:
+  push:
+    # run only against tags
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    steps:
+      - name: Install Task
+        uses: arduino/setup-task@v1
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.20.0'
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - run: git fetch --force --tags
+
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser-pro
+          version: latest
+          args: release --clean --skip-docker
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}

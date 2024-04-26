@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
-	"github.com/zyedidia/eget/home"
+	"github.com/permafrost-dev/eget/lib/home"
 )
 
 type ConfigGlobal struct {

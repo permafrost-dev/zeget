@@ -1,3 +1,3 @@
-package main
+package app
 
 var Version = "1.3.2+src"

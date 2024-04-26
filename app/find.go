@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/json"
@@ -24,27 +24,6 @@ type GithubRelease struct {
 	Prerelease bool      `json:"prerelease"`
 	Tag        string    `json:"tag_name"`
 	CreatedAt  time.Time `json:"created_at"`
-}
-
-type GithubError struct {
-	Code   int
-	Status string
-	Body   []byte
-	Url    string
-}
-type errResponse struct {
-	Message string `json:"message"`
-	Doc     string `json:"documentation_url"`
-}
-
-func (ge *GithubError) Error() string {
-	var msg errResponse
-	json.Unmarshal(ge.Body, &msg)
-
-	if ge.Code == http.StatusForbidden {
-		return fmt.Sprintf("%s: %s: %s", ge.Status, msg.Message, msg.Doc)
-	}
-	return fmt.Sprintf("%s (URL: %s)", ge.Status, ge.Url)
 }
 
 // A GithubAssetFinder finds assets for the given Repo at the given tag. Tags

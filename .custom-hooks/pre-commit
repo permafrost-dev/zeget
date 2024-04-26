@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+PROJECT_BASE_PATH=$(git rev-parse --show-toplevel)
+cd "$PROJECT_BASE_PATH" || exit 0
+
+GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
+
+if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
+    GOLINT_BIN=$(which golangci-lint)
+
+    if [ -n "$GOLINT_BIN" ]; then
+        LAST_COMMIT=$(git rev-parse HEAD)
+
+        echo "[pre-commit] $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev $LAST_COMMIT"
+
+        $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
+    fi
+fi

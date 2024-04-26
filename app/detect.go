@@ -1,9 +1,10 @@
-package main
+package app
 
 import (
 	"fmt"
 	"path"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -193,6 +194,9 @@ func (s *SingleAssetDetector) Detect(assets []string) (string, []string, error) 
 		if !s.Anti && strings.Contains(path.Base(a), s.Asset) {
 			candidates = append(candidates, a)
 		}
+		if s.Anti && path.Base(a) != s.Asset && len(assets) == 2 {
+			return a, nil, nil
+		}
 		if s.Anti && !strings.Contains(path.Base(a), s.Asset) {
 			candidates = append(candidates, a)
 		}
@@ -274,4 +278,50 @@ func (d *SystemDetector) Detect(assets []string) (string, []string, error) {
 		return all[0], nil, nil
 	}
 	return "", all, fmt.Errorf("no candidates found")
+}
+
+// Determine the appropriate detector. If the --system is 'all', we use an
+// AllDetector, which will just return all assets. Otherwise we use the
+// --system pair provided by the user, or the runtime.GOOS/runtime.GOARCH
+// pair by default (the host system OS/Arch pair).
+func DetermineCorrectDetector(opts *Flags) (detector Detector, err error) {
+	var system Detector
+
+	system, err = NewSystemDetector(runtime.GOOS, runtime.GOARCH)
+
+	if len(opts.System) > 2 && opts.System != "all" && strings.Contains(opts.System, "/") {
+		split := strings.Split(opts.System, "/")
+		system, err = NewSystemDetector(split[0], split[1])
+	}
+
+	if opts.System == "all" {
+		system = &AllDetector{}
+	}
+
+	if len(opts.Asset) == 0 {
+		return system, err
+	}
+
+	detector = system
+	detectors := make([]Detector, len(opts.Asset))
+
+	for i, a := range opts.Asset {
+		anti := strings.HasPrefix(a, "^")
+
+		if anti {
+			a = a[1:]
+		}
+
+		detectors[i] = &SingleAssetDetector{
+			Asset: a,
+			Anti:  anti,
+		}
+	}
+
+	detector = &DetectorChain{
+		detectors: detectors,
+		system:    system,
+	}
+
+	return detector, err
 }

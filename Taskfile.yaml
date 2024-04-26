@@ -1,0 +1,91 @@
+# This file can be run with the `task` utility: https://taskfile.dev/
+version: '3'
+
+dotenv: ['.env', '.env.local']
+
+vars:
+  APP_VERSION_FILE: './lib/version/app-version.go'
+  ENTRY_FILENAME: './main.go'
+  BUILD_OUTPUT_DIR: './dist'
+  BINARY_FILENAME: 'eget'
+  DIST_TARGET_FILE: '{{.BUILD_OUTPUT_DIR}}/{{.BINARY_FILENAME}}'
+  GIT_COMMIT:
+    sh: git log -n 1 --format=%h
+  GOLANGCILINT_CMD_DIRS:
+    sh: find . -name "*.go" -printf '%h\n' | sort -u | egrep -v '^.$' | grep -v './tools' | sd '\n' ' ' | awk -F'|' '{ print $1 }'
+
+tasks:
+
+  mod:
+    desc: Downloads and tidy Go modules
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  test:
+    desc: Runs tests
+    cmds:
+      - go test -cover ./app
+
+  build:
+    desc: Builds application
+    preconditions:
+      - task: mod
+    cmds:
+      - task: build-eget
+      - task: copy-config-template-to-dist
+
+  clean:
+    desc: Cleans up build artifacts
+    preconditions:
+      - test -d {{.BUILD_OUTPUT_DIR}}
+      - test -f {{.DIST_TARGET_FILE}}
+    cmds:
+      - rm -f {{.DIST_TARGET_FILE}}
+
+  lint:
+    dir: .
+    preconditions:
+      - which golangci-lint
+      - test -f .golangci.yaml
+      - which typos
+      - which actionlint
+      - which shellcheck
+    cmds:
+      - golangci-lint run
+      - actionlint
+      - shellcheck ./.custom-hooks/*
+      - typos
+
+  update-version-file:
+    cmds:
+      - printf "package version\n\nvar Version = \"$(go run tools/build-version.go)+src\"" > {{.APP_VERSION_FILE}}
+
+  prepare-dist-folder:
+    desc: Prepares dist folder
+    silent: true
+    internal: true
+    cmds:
+      - mkdir -p {{.BUILD_OUTPUT_DIR}}
+    status:
+      - test -d {{.BUILD_OUTPUT_DIR}}
+
+  build-eget:
+    desc: Builds binary
+    preconditions:
+      - task: prepare-dist-folder
+    sources:
+      - ./lib/**/*.go
+      - ./app/*.go
+    generates:
+      - '{{.DIST_TARGET_FILE}}'
+    cmds:
+      - go build -trimpath -ldflags="-s -w -X main.Version={{.VERSION}}-{{.GIT_COMMIT}}" -o {{.DIST_TARGET_FILE}} {{.ENTRY_FILENAME}}
+
+  autobuild:
+    interactive: true
+    desc: Watches for changes and automatically rebuilds the project binary, displays a minimal system notification on start/finish
+    preconditions:
+      - which watchexec
+    cmds:
+      - watchexec --exts go --fs-events create,modify,remove -N --debounce 300 -w ./app -w ./lib -- task build -f
