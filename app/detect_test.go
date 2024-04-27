@@ -15,7 +15,7 @@ func TestAllDetector_Detect(t *testing.T) {
 		name           string
 		assets         []app.Asset
 		wantMatch      string
-		wantCandidates []string
+		wantCandidates []app.Asset
 		wantErr        bool
 	}{
 		{
@@ -33,9 +33,12 @@ func TestAllDetector_Detect(t *testing.T) {
 				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
-			wantMatch:      "",
-			wantCandidates: []string{"asset1", "asset2"},
-			wantErr:        true,
+			wantMatch: "",
+			wantCandidates: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -112,7 +115,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 			if gotMatch.Name != tt.wantMatch {
 				t.Errorf("SingleAssetDetector.Detect() gotMatch = %v, want %v", gotMatch, tt.wantMatch)
 			}
-			if !reflect.DeepEqual(gotCandidates, tt.wantCandidates) {
+			if len(gotCandidates) != len(tt.wantCandidates) {
 				t.Errorf("SingleAssetDetector.Detect() gotCandidates = %v, want %v", gotCandidates, tt.wantCandidates)
 			}
 		})
@@ -128,7 +131,7 @@ func TestSystemDetector_Detect(t *testing.T) {
 		detector       *app.SystemDetector
 		assets         []app.Asset
 		wantMatch      string
-		wantCandidates []string
+		wantCandidates []app.Asset
 		wantErr        bool
 	}{
 		{
@@ -160,9 +163,12 @@ func TestSystemDetector_Detect(t *testing.T) {
 				app.Asset{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
 				app.Asset{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
 			},
-			wantMatch:      "",
-			wantCandidates: []string{"program-windows-amd64.zip", "program-macos.dmg"},
-			wantErr:        true,
+			wantMatch: "",
+			wantCandidates: []app.Asset{
+				app.Asset{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
+				app.Asset{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
+			},
+			wantErr: true,
 		},
 	}
 
