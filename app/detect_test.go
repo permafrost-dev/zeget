@@ -13,21 +13,26 @@ func TestAllDetector_Detect(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		assets         []string
+		assets         []app.Asset
 		wantMatch      string
 		wantCandidates []string
 		wantErr        bool
 	}{
 		{
-			name:           "Single asset",
-			assets:         []string{"asset1"},
+			name: "Single asset",
+			assets: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+			},
 			wantMatch:      "asset1",
 			wantCandidates: nil,
 			wantErr:        false,
 		},
 		{
-			name:           "Multiple assets",
-			assets:         []string{"asset1", "asset2"},
+			name: "Multiple assets",
+			assets: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+			},
 			wantMatch:      "",
 			wantCandidates: []string{"asset1", "asset2"},
 			wantErr:        true,
@@ -41,7 +46,7 @@ func TestAllDetector_Detect(t *testing.T) {
 				t.Errorf("AllDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotMatch != tt.wantMatch {
+			if gotMatch.Name != tt.wantMatch {
 				t.Errorf("AllDetector.Detect() gotMatch = %v, want %v", gotMatch, tt.wantMatch)
 			}
 			if !reflect.DeepEqual(gotCandidates, tt.wantCandidates) {
@@ -55,31 +60,40 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 	tests := []struct {
 		name           string
 		detector       app.SingleAssetDetector
-		assets         []string
+		assets         []app.Asset
 		wantMatch      string
 		wantCandidates []string
 		wantErr        bool
 	}{
 		{
-			name:           "Exact match",
-			detector:       app.SingleAssetDetector{Asset: "asset1", Anti: false},
-			assets:         []string{"asset1", "asset2"},
+			name:     "Exact match",
+			detector: app.SingleAssetDetector{Asset: "asset1", Anti: false},
+			assets: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+			},
 			wantMatch:      "asset1",
 			wantCandidates: nil,
 			wantErr:        false,
 		},
 		{
-			name:           "No match",
-			detector:       app.SingleAssetDetector{Asset: "asset3", Anti: false},
-			assets:         []string{"asset1", "asset2"},
+			name:     "No match",
+			detector: app.SingleAssetDetector{Asset: "asset3", Anti: false},
+			assets: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+			},
 			wantMatch:      "",
 			wantCandidates: nil,
 			wantErr:        true,
 		},
 		{
-			name:           "Anti match",
-			detector:       app.SingleAssetDetector{Asset: "asset1", Anti: true},
-			assets:         []string{"asset1", "asset2"},
+			name:     "Anti match",
+			detector: app.SingleAssetDetector{Asset: "asset1", Anti: true},
+			assets: []app.Asset{
+				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+			},
 			wantMatch:      "asset2",
 			wantCandidates: nil,
 			wantErr:        false,
@@ -95,7 +109,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 				t.Errorf("SingleAssetDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotMatch != tt.wantMatch {
+			if gotMatch.Name != tt.wantMatch {
 				t.Errorf("SingleAssetDetector.Detect() gotMatch = %v, want %v", gotMatch, tt.wantMatch)
 			}
 			if !reflect.DeepEqual(gotCandidates, tt.wantCandidates) {
@@ -112,31 +126,40 @@ func TestSystemDetector_Detect(t *testing.T) {
 	tests := []struct {
 		name           string
 		detector       *app.SystemDetector
-		assets         []string
+		assets         []app.Asset
 		wantMatch      string
 		wantCandidates []string
 		wantErr        bool
 	}{
 		{
-			name:           "Match OS and Arch",
-			detector:       linuxAMD64,
-			assets:         []string{"program-linux-amd64.tar.gz", "program-linux-arm.tar.gz"},
+			name:     "Match OS and Arch",
+			detector: linuxAMD64,
+			assets: []app.Asset{
+				app.Asset{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
+				app.Asset{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
+			},
 			wantMatch:      "program-linux-amd64.tar.gz",
 			wantCandidates: nil,
 			wantErr:        false,
 		},
 		{
-			name:           "Match only OS",
-			detector:       linuxARM,
-			assets:         []string{"program-linux-amd64.tar.gz", "program-linux-arm.tar.gz"},
+			name:     "Match only OS",
+			detector: linuxARM,
+			assets: []app.Asset{
+				app.Asset{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
+				app.Asset{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
+			},
 			wantMatch:      "program-linux-arm.tar.gz",
 			wantCandidates: nil,
 			wantErr:        false,
 		},
 		{
-			name:           "No matches",
-			detector:       linuxAMD64,
-			assets:         []string{"program-windows-amd64.zip", "program-macos.dmg"},
+			name:     "No matches",
+			detector: linuxAMD64,
+			assets: []app.Asset{
+				app.Asset{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
+				app.Asset{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
+			},
 			wantMatch:      "",
 			wantCandidates: []string{"program-windows-amd64.zip", "program-macos.dmg"},
 			wantErr:        true,
@@ -150,7 +173,7 @@ func TestSystemDetector_Detect(t *testing.T) {
 				t.Errorf("SystemDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotMatch != tt.wantMatch {
+			if gotMatch.Name != tt.wantMatch {
 				t.Errorf("SystemDetector.Detect() gotMatch = %v, want %v", gotMatch, tt.wantMatch)
 			}
 			if !reflect.DeepEqual(gotCandidates, tt.wantCandidates) {

@@ -105,16 +105,16 @@ func getFinder(project string, opts *Flags) (finder Finder, tool string) {
 		Prerelease: opts.Prerelease,
 		MinTime:    mint,
 	}
-	
+
 	return finder, tool
 }
 
-func getVerifier(sumAsset string, opts *Flags) (verifier Verifier, err error) {
+func getVerifier(sumAsset Asset, opts *Flags) (verifier Verifier, err error) {
 	if opts.Verify != "" {
 		verifier, err = NewSha256Verifier(opts.Verify)
-	} else if sumAsset != "" {
+	} else if sumAsset != (Asset{}) {
 		verifier = &Sha256AssetVerifier{
-			AssetURL: sumAsset,
+			AssetURL: sumAsset.DownloadURL,
 		}
 	} else if opts.Hash {
 		verifier = &Sha256Printer{}
@@ -321,7 +321,7 @@ func Run() {
 	fatalIf(err)
 
 	// get the url and candidates from the detector
-	url, candidates, err := detector.Detect(assets)
+	asset, candidates, err := detector.Detect(assets)
 	fatalIf(err)
 
 	if len(candidates) != 0 && err != nil {
@@ -329,17 +329,17 @@ func Run() {
 		fmt.Fprintf(os.Stderr, "%v: please select manually\n", err)
 		choices := make([]interface{}, len(candidates))
 		for i := range candidates {
-			choices[i] = path.Base(candidates[i])
+			choices[i] = path.Base(candidates[i].Name)
 		}
 		choice := userSelect(choices)
-		url = candidates[choice-1]
+		asset = candidates[choice-1]
 	}
 
 	// download with progress bar and get the response body
-	body := downloadUrl(url, output)
-	verifyChecksums(url, assets, body, output)
+	body := downloadUrl(asset.DownloadURL, output)
+	verifyChecksums(asset, assets, body, output)
 
-	extractor, err := getExtractor(url, tool, &opts)
+	extractor, err := getExtractor(asset.DownloadURL, tool, &opts)
 	fatalIf(err)
 
 	// get extraction candidates
@@ -400,7 +400,8 @@ func downloadUrl(url string, output io.Writer) []byte {
 			pbout = io.Discard
 		}
 
-		return pb.NewOptions64(size,
+		return pb.NewOptions64(
+			size,
 			pb.OptionSetWriter(pbout),
 			pb.OptionShowBytes(true),
 			pb.OptionSetWidth(10),
@@ -428,8 +429,8 @@ func downloadUrl(url string, output io.Writer) []byte {
 	return buf.Bytes()
 }
 
-func verifyChecksums(url string, assets []string, body []byte, output io.Writer) {
-	sumAsset := FindChecksumAsset(url, assets)
+func verifyChecksums(asset Asset, assets []Asset, body []byte, output io.Writer) {
+	sumAsset := FindChecksumAsset(asset, assets)
 	verifier, err := getVerifier(sumAsset, &opts)
 	if err != nil {
 		fatal(err)
@@ -442,8 +443,8 @@ func verifyChecksums(url string, assets []string, body []byte, output io.Writer)
 
 	var verifiedStr string
 
-	if opts.Verify == "" && sumAsset != "" {
-		verifiedStr = fmt.Sprintf("Checksum verified with %s\n", path.Base(sumAsset))
+	if opts.Verify == "" && sumAsset != (Asset{}) {
+		verifiedStr = fmt.Sprintf("Checksum verified with %s\n", path.Base(sumAsset.Name))
 	} else if opts.Verify != "" {
 		verifiedStr = "Checksum verified\n"
 	}
@@ -464,9 +465,8 @@ func extract(bin ExtractedFile, output io.Writer) {
 		os.MkdirAll(opts.Output, 0755)
 		out = filepath.Join(opts.Output, out)
 	} else {
-		if opts.Output != "" {
-			out = opts.Output
-		}
+		out = SetIf(opts.Output != "", opts.Output, out)
+
 		// only use $EGET_BIN if all of the following are true
 		// 1. $EGET_BIN is non-empty
 		// 2. --to is not a path (not a path if no path separator is found)

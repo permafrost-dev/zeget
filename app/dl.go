@@ -15,6 +15,12 @@ import (
 	pb "github.com/schollz/progressbar/v3"
 )
 
+const (
+	AcceptBinary     = "application/octet-stream"
+	AcceptGitHubJSON = "application/vnd.github+json"
+	AcceptText       = "text/plain"
+)
+
 func tokenFrom(s string) (string, error) {
 	if strings.HasPrefix(s, "@") {
 		f, err := home.Expand(s[1:])
@@ -50,18 +56,20 @@ func SetAuthHeader(req *http.Request) *http.Request {
 			fmt.Fprintln(os.Stderr, "error: cannot use GitHub token if SSL verification is disabled")
 			os.Exit(1)
 		}
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
 	return req
 }
 
-func Get(url string) (*http.Response, error) {
+func Get(url, accept string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("Accept", accept)
 
 	req = SetAuthHeader(req)
 
@@ -71,6 +79,18 @@ func Get(url string) (*http.Response, error) {
 	}}
 
 	return proxyClient.Do(req)
+}
+
+func GetJson(url string) (*http.Response, error) {
+	return Get(url, AcceptGitHubJSON)
+}
+
+func GetBinary(url string) (*http.Response, error) {
+	return Get(url, AcceptBinary)
+}
+
+func GetText(url string) (*http.Response, error) {
+	return Get(url, AcceptText)
 }
 
 type RateLimitJson struct {
@@ -101,17 +121,7 @@ func (r RateLimit) String() string {
 }
 
 func GetRateLimit() (RateLimit, error) {
-	url := "https://api.github.com/rate_limit"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return RateLimit{}, err
-	}
-
-	req = SetAuthHeader(req)
-
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := GetJson("https://api.github.com/rate_limit")
 	if err != nil {
 		return RateLimit{}, err
 	}
@@ -144,7 +154,7 @@ func Download(url string, out io.Writer, getbar func(size int64) *pb.ProgressBar
 		return err
 	}
 
-	resp, err := Get(url)
+	resp, err := GetBinary(url)
 	if err != nil {
 		return err
 	}

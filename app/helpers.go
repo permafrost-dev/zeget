@@ -80,13 +80,13 @@ func IsDirectory(path string) bool {
 
 // searches for an asset thaat has the same name as the requested one but
 // ending with .sha256 or .sha256sum
-func FindChecksumAsset(asset string, assets []string) string {
+func FindChecksumAsset(asset Asset, assets []Asset) Asset {
 	for _, a := range assets {
-		if a == asset+".sha256sum" || a == asset+".sha256" {
+		if a.Name == asset.Name+".sha256sum" || a.Name == asset.Name+".sha256" {
 			return a
 		}
 	}
-	return ""
+	return Asset{}
 }
 
 // IsDefinitelyNotExec returns true if the file is definitely not an executable.
@@ -139,4 +139,13 @@ func GetRename(file string, nameguess string) string {
 
 	// otherwise use the rename guess
 	return nameguess
+}
+
+// SetWhen returns the newValue if condition is true, otherwise it returns the original value.
+// use generics like <T interface{}> to make this function more flexible
+func SetIf[T interface{}](condition bool, original T, newValue T) T {
+	if condition {
+		return newValue
+	}
+	return original
 }

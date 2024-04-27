@@ -130,17 +130,16 @@ func TestIsDirectory(t *testing.T) {
 
 func TestFindChecksumAsset(t *testing.T) {
 	tests := []struct {
-		asset  string
-		assets []string
+		asset  app.Asset
+		assets []app.Asset
 		want   string
 	}{
-		{"file", []string{"file.sha256"}, "file.sha256"},
-		{"file", []string{"file.sha256sum"}, "file.sha256sum"},
-		{"file", []string{"otherfile.sha256sum"}, ""},
+		{app.Asset{Name: "file", DownloadURL: ""}, []app.Asset{app.Asset{Name: "file.sha256", DownloadURL: ""}}, "file.sha256"},
+		{app.Asset{Name: "file", DownloadURL: ""}, []app.Asset{app.Asset{Name: "otherfile.sha256", DownloadURL: ""}}, ""},
 	}
 	for _, tt := range tests {
-		t.Run(tt.asset, func(t *testing.T) {
-			if got := app.FindChecksumAsset(tt.asset, tt.assets); got != tt.want {
+		t.Run(tt.asset.Name, func(t *testing.T) {
+			if got := app.FindChecksumAsset(tt.asset, tt.assets); got.Name != tt.want {
 				t.Errorf("FindChecksumAsset() = %v, want %v", got, tt.want)
 			}
 		})
