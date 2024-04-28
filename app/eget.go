@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -109,20 +110,56 @@ func getFinder(project string, opts *Flags) (finder Finder, tool string) {
 	return finder, tool
 }
 
-func getVerifier(sumAsset Asset, opts *Flags) (verifier Verifier, err error) {
+func getVerifier(asset Asset, assets []Asset, opts *Flags) (verifier Verifier, sumAsset Asset, err error) {
+
+	sumAsset = Asset{}
+
 	if opts.Verify != "" {
 		verifier, err = NewSha256Verifier(opts.Verify)
-	} else if sumAsset != (Asset{}) {
-		verifier = &Sha256AssetVerifier{
-			AssetURL: sumAsset.DownloadURL,
+		if err != nil {
+			return nil, Asset{}, fmt.Errorf("create Sha256Verifier: %w", err)
 		}
-	} else if opts.Hash {
-		verifier = &Sha256Printer{}
-	} else {
-		verifier = &NoVerifier{}
+		return verifier, Asset{}, nil
 	}
-	return verifier, err
+
+	for _, a := range assets {
+		if a.Name == asset.Name+".sha256sum" || a.Name == asset.Name+".sha256" {
+			fmt.Printf("verify against %s\n", a)
+
+			return &Sha256AssetVerifier{AssetURL: a.DownloadURL}, a, nil
+		}
+		if strings.Contains(a.Name, "checksum") {
+			binaryUrl, err := url.Parse(asset.DownloadURL)
+			if err != nil {
+				return nil, a, fmt.Errorf("extract binary name from asset url: %s: %w", asset, err)
+			}
+			binaryName := path.Base(binaryUrl.Path)
+			fmt.Printf("verify against %s\n", a)
+			return &Sha256SumFileAssetVerifier{Sha256SumAssetURL: a.DownloadURL, BinaryName: binaryName}, a, nil
+		}
+	}
+
+	if opts.Hash {
+		return &Sha256Printer{}, Asset{}, nil
+	}
+
+	return &NoVerifier{}, Asset{}, nil
 }
+
+// func getVerifier(sumAsset Asset, opts *Flags) (verifier Verifier, err error) {
+// 	if opts.Verify != "" {
+// 		verifier, err = NewSha256Verifier(opts.Verify)
+// 	} else if sumAsset != (Asset{}) {
+// 		verifier = &Sha256AssetVerifier{
+// 			AssetURL: sumAsset.DownloadURL,
+// 		}
+// 	} else if opts.Hash {
+// 		verifier = &Sha256Printer{}
+// 	} else {
+// 		verifier = &NoVerifier{}
+// 	}
+// 	return verifier, err
+// }
 
 // Determine which extractor to use. If --download-only is provided, we
 // just "extract" the downloaded archive to itself. Otherwise we try to
@@ -430,20 +467,24 @@ func downloadUrl(url string, output io.Writer) []byte {
 }
 
 func verifyChecksums(asset Asset, assets []Asset, body []byte, output io.Writer) {
-	sumAsset := FindChecksumAsset(asset, assets)
-	verifier, err := getVerifier(sumAsset, &opts)
+	// sumAsset := FindChecksumAsset(asset, assets)
+	verifier, sumAsset, err := getVerifier(asset, assets, &opts)
+
+	var verifiedStr string = ""
+
 	if err != nil {
-		fatal(err)
+		verifiedStr = "Checksum verification failed, could not create a verifier.\n"
+		fmt.Fprintf(output, verifiedStr)
+		return
 	}
 
-	err = verifier.Verify(body)
-	if err != nil {
-		fatal(err)
+	if err == nil {
+		err = verifier.Verify(body)
 	}
 
-	var verifiedStr string
-
-	if opts.Verify == "" && sumAsset != (Asset{}) {
+	if err != nil && verifiedStr == "" {
+		verifiedStr = fmt.Sprintf("Checksum verification failed, %v\n", err)
+	} else if opts.Verify == "" && sumAsset != (Asset{}) {
 		verifiedStr = fmt.Sprintf("Checksum verified with %s\n", path.Base(sumAsset.Name))
 	} else if opts.Verify != "" {
 		verifiedStr = "Checksum verified\n"
