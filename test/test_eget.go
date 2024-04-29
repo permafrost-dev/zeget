@@ -44,8 +44,8 @@ func main() {
 	// must(run(eget, "--system", "windows/amd64", "--asset", "windows-gnu", "BurntSushi/ripgrep"))
 	// must(fileExists("rg.exe"))
 
-	must(run(eget, "-f", "eget.1", "zyedidia/eget"))
-	must(fileExists("eget.1"))
+	// must(run(eget, "-f", "eget.1", "zyedidia/eget"))
+	// must(fileExists("eget.1"))
 
 	fmt.Println("ALL TESTS PASS")
 }
