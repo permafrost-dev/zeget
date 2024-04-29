@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/url"
 	"os"
 	"os/exec"
@@ -15,70 +14,36 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	pb "github.com/schollz/progressbar/v3"
 )
-
-func fatal(a ...interface{}) {
-	fmt.Fprintln(os.Stderr, a...)
-	os.Exit(1)
-}
-
-func fatalIf(err error, a ...interface{}) {
-	if err != nil {
-		fatal(err, a)
-	}
-}
-
-func successExit(a ...interface{}) {
-	os.Exit(0)
-}
-
-func conditionalExit(err error) {
-	if err != nil {
-		fatal(err)
-	}
-
-	successExit()
-}
 
 // Determine the appropriate Finder to use. If opts.URL is provided, we use
 // a DirectAssetFinder. Otherwise we use a GithubAssetFinder. When a Github
 // repo is provided, we assume the repo name is the 'tool' name (for direct
 // URLs, the tool name is unknown and remains empty).
 func getFinder(project string, opts *Flags) (finder Finder, tool string) {
-	if IsLocalFile(project) || (IsUrl(project) && !IsGithubUrl(project)) {
-		finder = &DirectAssetFinder{
-			URL: project,
-		}
+	if IsLocalFile(project) || IsNonGithubUrl(project) {
 		opts.System = "all"
+		return &DirectAssetFinder{ URL: project }, tool
+	}
 
-		return finder, tool
+	if IsInvalidGithubUrl(project) {
+		Fatal(fmt.Sprintf("invalid GitHub repository URL %s", project))
 	}
 
 	if IsGithubUrl(project) {
-		_, after, found := Cut(project, "github.com/")
-		if found {
-			project = strings.Trim(after, "/")
-		} else {
-			fatal(fmt.Sprintf("invalid GitHub repo URL %s", project))
-		}
+		project, _ = RepositoryNameFromGithubUrl(project)
 	}
 
 	repo := project
-	if strings.Count(repo, "/") != 1 {
-		fatal("invalid argument (must be of the form `user/repo`)")
+	if !IsValidRepositoryReference(repo) {
+		Fatal("invalid argument (must be of the form `user/repo`)")
 	}
-	parts := strings.Split(repo, "/")
-	if parts[0] == "" || parts[1] == "" {
-		fatal("invalid argument (must be of the form `user/repo`)")
-	}
-	tool = parts[1]
+
+	tool = ParseRepositoryReference(repo).Name
 
 	if opts.Source {
-		tag := "main"
-		if opts.Tag != "" {
-			tag = opts.Tag
-		}
+		tag := SetIf(opts.Tag != "", "main", opts.Tag)
+
 		finder = &GithubSourceFinder{
 			Repo: repo,
 			Tag:  tag,
@@ -88,10 +53,7 @@ func getFinder(project string, opts *Flags) (finder Finder, tool string) {
 		return finder, tool
 	}
 
-	tag := "latest"
-	if opts.Tag != "" {
-		tag = fmt.Sprintf("tags/%s", opts.Tag)
-	}
+	tag := SetIf(opts.Tag != "", "latest", fmt.Sprintf("tags/%s", opts.Tag))
 
 	var mint time.Time
 	if opts.UpgradeOnly {
@@ -189,28 +151,6 @@ func getExtractor(url, tool string, opts *Flags) (extractor Extractor, err error
 	return extractor, nil
 }
 
-// Write an extracted file to disk with a new name.
-func writeFile(data []byte, rename string, mode fs.FileMode) error {
-	if rename[0] == '-' {
-		// if the output is '-', just print it to stdout
-		_, err := os.Stdout.Write(data)
-		return err
-	}
-
-	// remove file if it exists already
-	os.Remove(rename)
-	// make parent directories if necessary
-	os.MkdirAll(filepath.Dir(rename), 0755)
-
-	f, err := os.OpenFile(rename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.Write(data)
-	return err
-}
-
 // Would really like generics to implement this...
 // Make the user select one of the choices and return the index of the
 // selection.
@@ -230,7 +170,7 @@ func userSelect(choices []interface{}) int {
 		}
 
 		if errors.Is(err, io.EOF) {
-			fatal("Error reading selection")
+			Fatal("Error reading selection")
 		}
 
 		fmt.Fprintf(os.Stderr, "Invalid selection: %v\n", err)
@@ -291,17 +231,17 @@ func Run() {
 
 	config, err := InitializeConfig()
 	if err != nil {
-		fatal(err)
+		Fatal(err)
 	}
 
 	if err := SetGlobalOptionsFromConfig(config, flagparser, &opts, cli); err != nil {
-		fatal(err)
+		Fatal(err)
 	}
 
 	if cli.Rate {
 		rdat, err := GetRateLimit()
 		if err != nil {
-			fatal(err)
+			Fatal(err)
 		}
 		fmt.Println(rdat)
 		os.Exit(0)
@@ -314,18 +254,18 @@ func Run() {
 	}
 
 	if err := SetProjectOptionsFromConfig(config, flagparser, &opts, cli, target); err != nil {
-		fatal(err)
+		Fatal(err)
 	}
 
 	if cli.DownloadAll {
 		err = downloadConfigRepositories(config)
-		conditionalExit(err)
+		ConditionalExit(err)
 	}
 
 	if len(args) <= 0 {
 		fmt.Println("no target given")
 		flagparser.WriteHelp(os.Stdout)
-		successExit()
+		SuccessExit()
 	}
 
 	if opts.DisableSSL {
@@ -340,26 +280,26 @@ func Run() {
 			os.Exit(1)
 		}
 		fmt.Printf("Removed `%s`\n", filepath.Join(ebin, target))
-		successExit()
+		SuccessExit()
 	}
 
 	output := createOutputWriter()
 
 	finder, tool := getFinder(target, &opts)
 	assets, err := finder.Find()
-	fatalIf(err)
+	FatalIf(err)
 
 	if err != nil && errors.Is(err, ErrNoUpgrade) {
 		fmt.Fprintf(output, "%s: %v\n", target, err)
-		successExit()
+		SuccessExit()
 	}
 
 	detector, err := DetermineCorrectDetector(&opts)
-	fatalIf(err)
+	FatalIf(err)
 
 	// get the url and candidates from the detector
 	asset, candidates, err := detector.Detect(assets)
-	fatalIf(err)
+	FatalIf(err)
 
 	if len(candidates) != 0 && err != nil {
 		// if multiple candidates are returned, the user must select manually which one to download
@@ -373,17 +313,17 @@ func Run() {
 	}
 
 	// download with progress bar and get the response body
-	body := downloadUrl(asset.DownloadURL, output)
+	body := downloadAsset(&asset, output)
 	verifyChecksums(asset, assets, body, output)
 
 	extractor, err := getExtractor(asset.DownloadURL, tool, &opts)
-	fatalIf(err)
+	FatalIf(err)
 
 	// get extraction candidates
 	bin, bins, err := extractor.Extract(body, opts.All)
 
 	if err != nil && len(bins) == 0 {
-		fatal(err)
+		Fatal(err)
 	}
 
 	if len(bins) != 0 && err != nil && !opts.All {
@@ -426,48 +366,18 @@ func createOutputWriter() io.Writer {
 	return os.Stderr
 }
 
-func downloadUrl(url string, output io.Writer) []byte {
-	// print the URL
-	fmt.Fprintf(output, "%s\n", url)
+func downloadAsset(asset *Asset, output io.Writer) []byte {
+	fmt.Fprintf(output, "%s\n", asset.DownloadURL) // print the URL
 
 	buf := &bytes.Buffer{}
-	err := Download(url, buf, func(size int64) *pb.ProgressBar {
-		var pbout io.Writer = os.Stderr
-		if opts.Quiet {
-			pbout = io.Discard
-		}
-
-		return pb.NewOptions64(
-			size,
-			pb.OptionSetWriter(pbout),
-			pb.OptionShowBytes(true),
-			pb.OptionSetWidth(10),
-			pb.OptionThrottle(65*time.Millisecond),
-			pb.OptionShowCount(),
-			pb.OptionSpinnerType(14),
-			pb.OptionFullWidth(),
-			pb.OptionSetDescription("Downloading"),
-			pb.OptionOnCompletion(func() {
-				fmt.Fprint(pbout, "\n")
-			}),
-			pb.OptionSetTheme(pb.Theme{
-				Saucer:        "=",
-				SaucerHead:    ">",
-				SaucerPadding: " ",
-				BarStart:      "[",
-				BarEnd:        "]",
-			}))
-	})
-
-	if err != nil {
-		fatal(fmt.Sprintf("%s (URL: %s)", err, url))
+	if err := Download(asset.DownloadURL, buf); err != nil {
+		Fatal(fmt.Sprintf("%s (URL: %s)", err, asset.DownloadURL))
 	}
 
 	return buf.Bytes()
 }
 
 func verifyChecksums(asset Asset, assets []Asset, body []byte, output io.Writer) {
-	// sumAsset := FindChecksumAsset(asset, assets)
 	verifier, sumAsset, err := getVerifier(asset, assets, &opts)
 
 	var verifiedStr string = ""
@@ -518,7 +428,7 @@ func extract(bin ExtractedFile, output io.Writer) {
 	}
 
 	if err := bin.Extract(out); err != nil {
-		fatal(err)
+		Fatal(err)
 	}
 
 	fmt.Fprintf(output, "Extracted `%s` to `%s`\n", bin.ArchiveName, out)

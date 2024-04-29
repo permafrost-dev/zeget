@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/permafrost-dev/eget/lib/targetfile"
 	"github.com/ulikunitz/xz"
 )
 
@@ -162,11 +163,18 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 			}
 
 			var extract func(to string) error
-			if !f.Dir() {
-				extract = func(to string) error {
-					return writeFile(fdata, to, ModeFrom(name, f.Mode))
+
+			extract = func(to string) error {
+				tf := targetfile.GetTargetFile(to, ModeFrom(name, f.Mode), true)
+
+				if tf.Err != nil {
+					return fmt.Errorf("extract: %w", err)
 				}
-			} else {
+
+				return tf.Write(fdata, true)
+			}
+
+			if f.Dir() {
 				dirs = append(dirs, f.Name)
 				extract = func(to string) error {
 					ar, err := a.Ar(data, a.Decompress)
@@ -201,16 +209,19 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 							return fmt.Errorf("extract: %w", err)
 						}
 						name = filepath.Join(to, subf.Name[len(f.Name):])
-						err = writeFile(fdata, name, subf.Mode)
-						if err != nil {
+
+						tf := targetfile.GetTargetFile(name, subf.Mode, true)
+						if err = tf.Write(fdata, true); err != nil {
 							return fmt.Errorf("extract: %w", err)
 						}
 					}
+
 					for _, l := range links {
 						if err := l.Write(); err != nil && err != os.ErrExist {
 							return fmt.Errorf("extract: %w", err)
 						}
 					}
+
 					return nil
 				}
 			}
@@ -230,11 +241,11 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 			}
 		}
 	}
-	
+
 	if len(candidates) == 1 {
 		return candidates[0], nil, nil
-	} 
-	
+	}
+
 	if len(candidates) == 0 {
 		return ExtractedFile{}, candidates, fmt.Errorf("target %v not found in archive", a.File)
 	}
@@ -267,7 +278,9 @@ func (sf *SingleFileExtractor) Extract(data []byte, multiple bool) (ExtractedFil
 			if err != nil {
 				return err
 			}
-			return writeFile(decdata, to, ModeFrom(name, 0666))
+
+			tf := targetfile.GetTargetFile(to, ModeFrom(name, 0666), true)
+			return tf.Write(decdata, true)
 		},
 	}, nil, nil
 }

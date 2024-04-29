@@ -2,8 +2,7 @@ package app
 
 import "io/fs"
 
-// An ExtractedFile contains the data, name, and permissions of a file in the
-// archive.
+// An ExtractedFile contains the data, name, and permissions of a file in the archive.
 type ExtractedFile struct {
 	Name        string // name to extract to
 	ArchiveName string // name in archive

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -59,8 +60,54 @@ func Cut(s, sep string) (before, after string, found bool) {
 // IsGithubUrl returns true if s is a URL with github.com as the host.
 func IsGithubUrl(s string) bool {
 	var ghrgx = regexp.MustCompile(`^(http(s)?://)?github\.com/[\w,\-,_]+/[\w,\-,_]+(.git)?(/)?$`)
-
 	return ghrgx.MatchString(s)
+}
+
+func IsInvalidGithubUrl(s string) bool {
+	containsDomain := strings.HasPrefix(s, "github.com") || strings.HasPrefix(s, "https://github.com")
+
+	return containsDomain && !IsGithubUrl(s)
+}
+
+func IsNonGithubUrl(s string) bool {
+	return IsUrl(s) && !IsGithubUrl(s)
+}
+
+func RepositoryNameFromGithubUrl(s string) (name string, found bool) {
+	if !IsGithubUrl(s) {
+		return "", false
+	}
+
+	pattern := regexp.MustCompile(`github\.com/([\w\-_]+/[\w\-_]+)(\.git)?(/)?$`)
+	matches := pattern.FindStringSubmatch(s)
+
+	return matches[1], true
+}
+
+// IsValidRepositoryReference returns true if s is a valid repository reference in the form of "owner/repo".
+func IsValidRepositoryReference(s string) bool {
+	if strings.Count(s, "/") != 1 || len(s) < 3 {
+		return false
+	}
+
+	pattern := regexp.MustCompile(`^[\w\-_]+/[\w\-_]+$`)
+	return pattern.MatchString(s)
+}
+
+type RepositoryReference struct {
+	Owner string
+	Name  string
+}
+
+func ParseRepositoryReference(s string) *RepositoryReference {
+	if !IsValidRepositoryReference(s) {
+		return nil
+	}
+
+	// parts is guaranteed to have 2 elements because IsValidRepositoryReference checks, so no need to check for bounds
+	parts := strings.Split(s, "/")
+
+	return &RepositoryReference{Owner: parts[0], Name: parts[len(parts)-1]}
 }
 
 // IsLocalFile returns true if the file at 's' exists.
@@ -148,4 +195,27 @@ func SetIf[T interface{}](condition bool, original T, newValue T) T {
 		return newValue
 	}
 	return original
+}
+
+func Fatal(a ...interface{}) {
+	fmt.Fprintln(os.Stderr, a...)
+	os.Exit(1)
+}
+
+func FatalIf(err error, a ...interface{}) {
+	if err != nil {
+		Fatal(err, a)
+	}
+}
+
+func SuccessExit(a ...interface{}) {
+	os.Exit(0)
+}
+
+func ConditionalExit(err error) {
+	if err != nil {
+		Fatal(err)
+	}
+
+	SuccessExit()
 }

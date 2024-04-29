@@ -85,7 +85,7 @@ func GetJson(url string) (*http.Response, error) {
 	return Get(url, AcceptGitHubJSON)
 }
 
-func GetBinary(url string) (*http.Response, error) {
+func GetBinaryFile(url string) (*http.Response, error) {
 	return Get(url, AcceptBinary)
 }
 
@@ -139,11 +139,39 @@ func GetRateLimit() (RateLimit, error) {
 	return parsed.Resources["core"], err
 }
 
+func getDownloadProgressBar(size int64) *pb.ProgressBar {
+	var pbout io.Writer = os.Stderr
+	if opts.Quiet {
+		pbout = io.Discard
+	}
+
+	return pb.NewOptions64(
+		size,
+		pb.OptionSetWriter(pbout),
+		pb.OptionShowBytes(true),
+		pb.OptionSetWidth(10),
+		pb.OptionThrottle(65*time.Millisecond),
+		pb.OptionShowCount(),
+		pb.OptionSpinnerType(14),
+		pb.OptionFullWidth(),
+		pb.OptionSetDescription("Downloading"),
+		pb.OptionOnCompletion(func() {
+			fmt.Fprint(pbout, "\n")
+		}),
+		pb.OptionSetTheme(pb.Theme{
+			Saucer:        "=",
+			SaucerHead:    ">",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}))
+}
+
 // Download the file at 'url' and write the http response body to 'out'. The
 // 'getbar' function allows the caller to construct a progress bar given the
 // size of the file being downloaded, and the download will write to the
 // returned progress bar.
-func Download(url string, out io.Writer, getbar func(size int64) *pb.ProgressBar) error {
+func Download(url string, out io.Writer) error {
 	if IsLocalFile(url) {
 		f, err := os.Open(url)
 		if err != nil {
@@ -154,7 +182,7 @@ func Download(url string, out io.Writer, getbar func(size int64) *pb.ProgressBar
 		return err
 	}
 
-	resp, err := GetBinary(url)
+	resp, err := GetBinaryFile(url)
 	if err != nil {
 		return err
 	}
@@ -168,7 +196,8 @@ func Download(url string, out io.Writer, getbar func(size int64) *pb.ProgressBar
 		return fmt.Errorf("download error: %d: %s", resp.StatusCode, body)
 	}
 
-	bar := getbar(resp.ContentLength)
+	bar := getDownloadProgressBar(resp.ContentLength)
 	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
+
 	return err
 }
