@@ -3,6 +3,7 @@
 *.log
 .vscode/
 .idea/
+dist/
 
 eget
 eget.exe
