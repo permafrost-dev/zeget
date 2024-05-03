@@ -55,7 +55,7 @@ func (f *GithubAssetFinder) Find() ([]Asset, error) {
 
 	// query github's API for this repo/tag pair.
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/%s", f.Repo, f.Tag)
-	resp, err := GetJson(url)
+	resp, err := GetJSON(url)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (f *GithubAssetFinder) Find() ([]Asset, error) {
 			Status: resp.Status,
 			Code:   resp.StatusCode,
 			Body:   body,
-			Url:    url,
+			URL:    url,
 		}
 	}
 
@@ -108,7 +108,7 @@ func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
 
 	for page := 1; ; page++ {
 		url := fmt.Sprintf("https://api.github.com/repos/%s/releases?page=%d", f.Repo, page)
-		resp, err := GetJson(url)
+		resp, err := GetJSON(url)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
 				Status: resp.Status,
 				Code:   resp.StatusCode,
 				Body:   body,
-				Url:    url,
+				URL:    url,
 			}
 		}
 
@@ -165,7 +165,7 @@ func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
 // finds the latest pre-release and returns the tag
 func (f *GithubAssetFinder) getLatestTag() (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", f.Repo)
-	resp, err := GetJson(url)
+	resp, err := GetJSON(url)
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}

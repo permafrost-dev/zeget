@@ -10,7 +10,7 @@ type GithubError struct {
 	Code   int
 	Status string
 	Body   []byte
-	Url    string
+	URL    string
 }
 
 type GithubErrorResponse struct {
@@ -26,5 +26,5 @@ func (ge *GithubError) Error() string {
 		return fmt.Sprintf("%s: %s: %s", ge.Status, msg.Message, msg.Doc)
 	}
 
-	return fmt.Sprintf("%s (URL: %s)", ge.Status, ge.Url)
+	return fmt.Sprintf("%s (URL: %s)", ge.Status, ge.URL)
 }

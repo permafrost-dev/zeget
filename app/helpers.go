@@ -43,8 +43,8 @@ func Bintime(bin string, to string) (t time.Time) {
 	return fi.ModTime()
 }
 
-// IsUrl returns true if s is a valid URL.
-func IsUrl(s string) bool {
+// IsURL returns true if s is a valid URL.
+func IsURL(s string) bool {
 	u, err := url.Parse(s)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
@@ -57,24 +57,24 @@ func Cut(s, sep string) (before, after string, found bool) {
 	return s, "", false
 }
 
-// IsGithubUrl returns true if s is a URL with github.com as the host.
-func IsGithubUrl(s string) bool {
+// IsGithubURL returns true if s is a URL with github.com as the host.
+func IsGithubURL(s string) bool {
 	var ghrgx = regexp.MustCompile(`^(http(s)?://)?github\.com/[\w,\-,_]+/[\w,\-,_]+(.git)?(/)?$`)
 	return ghrgx.MatchString(s)
 }
 
-func IsInvalidGithubUrl(s string) bool {
+func IsInvalidGithubURL(s string) bool {
 	containsDomain := strings.HasPrefix(s, "github.com") || strings.HasPrefix(s, "https://github.com")
 
-	return containsDomain && !IsGithubUrl(s)
+	return containsDomain && !IsGithubURL(s)
 }
 
-func IsNonGithubUrl(s string) bool {
-	return IsUrl(s) && !IsGithubUrl(s)
+func IsNonGithubURL(s string) bool {
+	return IsURL(s) && !IsGithubURL(s)
 }
 
-func RepositoryNameFromGithubUrl(s string) (name string, found bool) {
-	if !IsGithubUrl(s) {
+func RepositoryNameFromGithubURL(s string) (name string, found bool) {
+	if !IsGithubURL(s) {
 		return "", false
 	}
 
@@ -208,7 +208,7 @@ func FatalIf(err error, a ...interface{}) {
 	}
 }
 
-func SuccessExit(a ...interface{}) {
+func SuccessExit(_ ...interface{}) {
 	os.Exit(0)
 }
 

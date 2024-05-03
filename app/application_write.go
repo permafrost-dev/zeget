@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-func (a *Application) write(format string, args ...any) (n int, err error) {
-	return fmt.Fprintf(a.Output, format, args...)
+func (app *Application) write(format string, args ...any) (n int, err error) {
+	return fmt.Fprintf(app.Output, format, args...)
 }
 
 func (app *Application) writeLine(format string, args ...any) (n int, err error) {

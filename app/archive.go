@@ -94,7 +94,7 @@ type ZipArchive struct {
 
 // decompressor does nothing for a zip archive because it already has built-in
 // compression.
-func NewZipArchive(data []byte, d DecompFn) (Archive, error) {
+func NewZipArchive(data []byte, _ DecompFn) (Archive, error) {
 	r := bytes.NewReader(data)
 	zr, err := zip.NewReader(r, int64(len(data)))
 	return &ZipArchive{

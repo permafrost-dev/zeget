@@ -85,7 +85,7 @@ func Get(url, accept string, disableSSL bool) (*http.Response, error) {
 	return proxyClient.Do(req)
 }
 
-func GetJson(url string) (*http.Response, error) {
+func GetJSON(url string) (*http.Response, error) {
 	return Get(url, AcceptGitHubJSON, false)
 }
 
@@ -97,7 +97,7 @@ func GetText(url string) (*http.Response, error) {
 	return Get(url, AcceptText, false)
 }
 
-type RateLimitJson struct {
+type RateLimitJSON struct {
 	Resources map[string]RateLimit
 }
 
@@ -113,19 +113,20 @@ func (r RateLimit) ResetTime() time.Time {
 
 func (r RateLimit) String() string {
 	now := time.Now()
-	rtime := r.ResetTime()
-	if rtime.Before(now) {
-		return fmt.Sprintf("Limit: %d, Remaining: %d, Reset: %v", r.Limit, r.Remaining, rtime)
-	} else {
-		return fmt.Sprintf(
-			"Limit: %d, Remaining: %d, Reset: %v (%v)",
-			r.Limit, r.Remaining, rtime, rtime.Sub(now).Round(time.Second),
-		)
+	rTime := r.ResetTime()
+
+	if rTime.Before(now) {
+		return fmt.Sprintf("Limit: %d, Remaining: %d, Reset: %v", r.Limit, r.Remaining, rTime)
 	}
+
+	return fmt.Sprintf(
+		"Limit: %d, Remaining: %d, Reset: %v (%v)",
+		r.Limit, r.Remaining, rTime, rTime.Sub(now).Round(time.Second),
+	)
 }
 
 func GetRateLimit() (RateLimit, error) {
-	resp, err := GetJson("https://api.github.com/rate_limit")
+	resp, err := GetJSON("https://api.github.com/rate_limit")
 	if err != nil {
 		return RateLimit{}, err
 	}
@@ -137,7 +138,7 @@ func GetRateLimit() (RateLimit, error) {
 		return RateLimit{}, err
 	}
 
-	var parsed RateLimitJson
+	var parsed RateLimitJSON
 	err = json.Unmarshal(b, &parsed)
 
 	return parsed.Resources["core"], err

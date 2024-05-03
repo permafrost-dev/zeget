@@ -279,7 +279,7 @@ type SingleFileExtractor struct {
 	Decompress func(r io.Reader) (io.Reader, error)
 }
 
-func (sf *SingleFileExtractor) Extract(data []byte, multiple bool) (ExtractedFile, []ExtractedFile, error) {
+func (sf *SingleFileExtractor) Extract(data []byte, _ bool) (ExtractedFile, []ExtractedFile, error) {
 	name := GetRename(sf.Name, sf.Rename)
 	return ExtractedFile{
 		Name:        name,

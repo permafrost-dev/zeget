@@ -45,7 +45,7 @@ func TestIsUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := app.IsUrl(tt.s); got != tt.want {
+			if got := app.IsURL(tt.s); got != tt.want {
 				t.Errorf("IsUrl() = %v, want %v", got, tt.want)
 			}
 		})
@@ -83,7 +83,7 @@ func TestIsGithubUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
-			if got := app.IsGithubUrl(tt.s); got != tt.want {
+			if got := app.IsGithubURL(tt.s); got != tt.want {
 				t.Errorf("IsGithubUrl() = %v, want %v", got, tt.want)
 			}
 		})

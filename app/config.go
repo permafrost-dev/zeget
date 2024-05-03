@@ -98,8 +98,8 @@ func GetOSConfigPath(appName string, homePath string) string {
 }
 
 func (app *Application) tryLoadingConfigFiles(config *Config, homePath string, appName string) (*Config, error) {
-	var err error = nil
-	var cfg *Config = config
+	var err error
+	var cfg = config
 	var filenames = []string{}
 
 	if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok && configFilePath != "" {
@@ -134,8 +134,8 @@ func (app *Application) tryLoadingConfigFiles(config *Config, homePath string, a
 }
 
 func (app *Application) initializeConfig() {
-	var err error = nil
-	var config *Config = nil
+	var err error
+	var config *Config
 
 	appName := "eget"
 	homePath, _ := os.UserHomeDir()
@@ -264,7 +264,7 @@ func update[T any](config T, cli *T) T {
 }
 
 // Move the loaded configuration file global options into the opts variable
-func SetGlobalOptionsFromConfig(config *Config, parser *flags.Parser, opts *Flags, cli CliFlags) error {
+func SetGlobalOptionsFromConfig(config *Config, _ *flags.Parser, opts *Flags, cli CliFlags) error {
 	if config.Global.GithubToken != "" && os.Getenv("EGET_GITHUB_TOKEN") == "" {
 		os.Setenv("EGET_GITHUB_TOKEN", config.Global.GithubToken)
 	}
@@ -292,7 +292,7 @@ func SetGlobalOptionsFromConfig(config *Config, parser *flags.Parser, opts *Flag
 }
 
 // Move the loaded configuration file project options into the opts variable
-func SetProjectOptionsFromConfig(config *Config, parser *flags.Parser, opts *Flags, cli CliFlags, projectName string) error {
+func SetProjectOptionsFromConfig(config *Config, _ *flags.Parser, opts *Flags, cli CliFlags, projectName string) error {
 	for name, repo := range config.Repositories {
 		if name == projectName {
 			opts.All = update(repo.All, cli.All)

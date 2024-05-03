@@ -26,20 +26,24 @@ func (dc *DetectorChain) Detect(assets []Asset) (Asset, []Asset, error) {
 		choice, candidates, err := d.Detect(assets)
 		if len(candidates) == 0 && err != nil {
 			return Asset{}, nil, err
-		} else if len(candidates) == 0 {
-			return choice, nil, nil
-		} else {
-			assets = candidates
 		}
+		if len(candidates) == 0 {
+			return choice, nil, nil
+		}
+		assets = candidates
 	}
+
 	choice, candidates, err := dc.system.Detect(assets)
 	if len(candidates) == 0 && err != nil {
 		return Asset{}, nil, err
-	} else if len(candidates) == 0 {
+	}
+	if len(candidates) == 0 {
 		return choice, nil, nil
-	} else if len(candidates) >= 1 {
+	}
+	if len(candidates) >= 1 {
 		assets = candidates
 	}
+
 	return Asset{}, assets, fmt.Errorf("%d candidates found for asset chain", len(assets))
 }
 

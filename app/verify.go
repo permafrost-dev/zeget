@@ -16,7 +16,7 @@ type Verifier interface {
 
 type NoVerifier struct{}
 
-func (n *NoVerifier) Verify(b []byte) error {
+func (n *NoVerifier) Verify(_ []byte) error {
 	return nil
 }
 
@@ -67,7 +67,7 @@ type Sha256AssetVerifier struct {
 }
 
 func (s256 *Sha256AssetVerifier) Verify(b []byte) error {
-	resp, err := GetJson(s256.AssetURL)
+	resp, err := GetJSON(s256.AssetURL)
 	if err != nil {
 		return err
 	}
@@ -96,8 +96,8 @@ func (s256 *Sha256AssetVerifier) Verify(b []byte) error {
 	}
 }
 
-func (n *Sha256AssetVerifier) String() string {
-	return fmt.Sprintf("checksum verified with %s", n.AssetURL)
+func (s256 *Sha256AssetVerifier) String() string {
+	return fmt.Sprintf("checksum verified with %s", s256.AssetURL)
 }
 
 type Sha256SumFileAssetVerifier struct {
@@ -108,7 +108,7 @@ type Sha256SumFileAssetVerifier struct {
 
 func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	got := sha256.Sum256(b)
-	resp1, err := GetJson(s256.Sha256SumAssetURL)
+	resp1, err := GetJSON(s256.Sha256SumAssetURL)
 	if err != nil {
 		return err
 	}
@@ -152,6 +152,6 @@ func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	return nil
 }
 
-func (n *Sha256SumFileAssetVerifier) String() string {
-	return fmt.Sprintf("checksum verified with %s", n.Sha256SumAssetURL)
+func (s256 *Sha256SumFileAssetVerifier) String() string {
+	return fmt.Sprintf("checksum verified with %s", s256.Sha256SumAssetURL)
 }

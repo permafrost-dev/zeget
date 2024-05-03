@@ -266,17 +266,17 @@ func (app *Application) extract(bin ExtractedFile) {
 // repo is provided, we assume the repo name is the 'tool' name (for direct
 // URLs, the tool name is unknown and remains empty).
 func (app *Application) getFinder(project string) (finder Finder, tool string) {
-	if IsLocalFile(project) || IsNonGithubUrl(project) {
+	if IsLocalFile(project) || IsNonGithubURL(project) {
 		app.Opts.System = "all"
 		return &DirectAssetFinder{URL: project}, tool
 	}
 
-	if IsInvalidGithubUrl(project) {
+	if IsInvalidGithubURL(project) {
 		Fatal(fmt.Sprintf("invalid GitHub repository URL %s", project))
 	}
 
-	if IsGithubUrl(project) {
-		project, _ = RepositoryNameFromGithubUrl(project)
+	if IsGithubURL(project) {
+		project, _ = RepositoryNameFromGithubURL(project)
 	}
 
 	if !IsValidRepositoryReference(project) {
@@ -324,11 +324,11 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 			return &Sha256AssetVerifier{AssetURL: item.DownloadURL}, item, nil
 		}
 		if strings.Contains(item.Name, "checksum") {
-			binaryUrl, err := url.Parse(asset.DownloadURL)
+			binaryURL, err := url.Parse(asset.DownloadURL)
 			if err != nil {
 				return nil, item, fmt.Errorf("extract binary name from asset url: %s: %w", asset, err)
 			}
-			binaryName := path.Base(binaryUrl.Path)
+			binaryName := path.Base(binaryURL.Path)
 			app.writeLine("verify against %s", item)
 			return &Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName}, item, nil
 		}
@@ -346,8 +346,8 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 // extract the literal file provided by --file, or by default we just
 // extract a binary with the tool name that was possibly auto-detected
 // above.
-func (a *Application) getExtractor(url, tool string) (extractor Extractor, err error) {
-	if a.Opts.DLOnly {
+func (app *Application) getExtractor(url, tool string) (extractor Extractor, err error) {
+	if app.Opts.DLOnly {
 		return &SingleFileExtractor{
 			Name:   path.Base(url),
 			Rename: path.Base(url),
@@ -357,8 +357,8 @@ func (a *Application) getExtractor(url, tool string) (extractor Extractor, err e
 		}, nil
 	}
 
-	if a.Opts.ExtractFile != "" {
-		gc, err := NewGlobChooser(a.Opts.ExtractFile)
+	if app.Opts.ExtractFile != "" {
+		gc, err := NewGlobChooser(app.Opts.ExtractFile)
 		if err != nil {
 			return nil, err
 		}
@@ -407,7 +407,7 @@ func (app *Application) downloadConfigRepositories() error {
 		binary = os.Args[0]
 	}
 
-	for name, _ := range app.Config.Repositories {
+	for name := range app.Config.Repositories {
 		cmd := exec.Command(binary, name)
 		cmd.Stderr = os.Stderr
 

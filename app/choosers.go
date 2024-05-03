@@ -45,7 +45,7 @@ type LiteralFileChooser struct {
 	File string
 }
 
-func (lf *LiteralFileChooser) Choose(name string, dir bool, mode fs.FileMode) (bool, bool) {
+func (lf *LiteralFileChooser) Choose(name string, _ bool, _ fs.FileMode) (bool, bool) {
 	return false, filepath.Base(name) == filepath.Base(lf.File) && strings.HasSuffix(name, lf.File)
 }
 
@@ -68,7 +68,7 @@ func NewGlobChooser(gl string) (*GlobChooser, error) {
 	}, err
 }
 
-func (gc *GlobChooser) Choose(name string, dir bool, mode fs.FileMode) (bool, bool) {
+func (gc *GlobChooser) Choose(name string, _ bool, _ fs.FileMode) (bool, bool) {
 	if gc.all {
 		return true, true
 	}
