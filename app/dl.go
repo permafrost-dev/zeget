@@ -70,13 +70,15 @@ func Get(url, accept string) (*http.Response, error) {
 	}
 
 	req.Header.Set("Accept", accept)
-
+	
 	req = SetAuthHeader(req)
 
-	proxyClient := &http.Client{Transport: &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: opts.DisableSSL},
-	}}
+	proxyClient := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: opts.DisableSSL},
+		},
+	}
 
 	return proxyClient.Do(req)
 }

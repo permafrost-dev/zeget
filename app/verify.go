@@ -95,31 +95,45 @@ func (s256 *Sha256AssetVerifier) Verify(b []byte) error {
 	}
 }
 
-
 func (n *Sha256AssetVerifier) String() string {
 	return fmt.Sprintf("checksum verified with %s", n.AssetURL)
 }
 
 type Sha256SumFileAssetVerifier struct {
 	Sha256SumAssetURL string
+	RealAssetURL      string
 	BinaryName        string
 }
 
 func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	got := sha256.Sum256(b)
-
-	resp, err := GetJson(s256.Sha256SumAssetURL)
+	resp1, err := GetJson(s256.Sha256SumAssetURL)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp1.Body.Close()
+
+	// follow the "redirect" in the JSON provided by "browser_download_url":
+	body, err := io.ReadAll(resp1.Body)
+	urlpattern := regexp.MustCompile(`"(https://github.com/[\w-_]+/[\w-_]+/releases/download/.+)"`)
+	downloadMatch := urlpattern.FindStringSubmatch(string(body))
+	if downloadMatch == nil {
+		return fmt.Errorf("no download url found in %s", s256.Sha256SumAssetURL)
+	}
+
+	s256.RealAssetURL = downloadMatch[1]
+
+	resp, err := GetText(s256.RealAssetURL)
+	if err != nil {
+		return err
+	}
 
 	expectedFound := false
 	scanner := bufio.NewScanner(resp.Body)
-	sha256sumLinePattern := regexp.MustCompile(fmt.Sprintf("(%x)\\s+(%s)", got, s256.BinaryName))
+	sha256sumLinePattern := regexp.MustCompile(fmt.Sprintf("(%x)\\s+([\\w_\\-\\.]+)", got)) //, s256.BinaryName
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		matches := sha256sumLinePattern.FindSubmatch(line)
+		matches := sha256sumLinePattern.FindStringSubmatch(string(line))
 		if matches == nil {
 			continue
 		}
