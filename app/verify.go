@@ -10,6 +10,15 @@ import (
 	"regexp"
 )
 
+type VerifyChecksumResult uint8
+
+const (
+	VerifyChecksumNone               VerifyChecksumResult = 0
+	VerifyChecksumSuccess            VerifyChecksumResult = 1
+	VerifyChecksumVerificationFailed VerifyChecksumResult = 2
+	VerifyChecksumFailedNoVerifier   VerifyChecksumResult = 3
+)
+
 type Verifier interface {
 	Verify(b []byte) error
 }

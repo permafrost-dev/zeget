@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/jessevdk/go-flags"
 	"github.com/permafrost-dev/eget/lib/home"
 )
 
@@ -264,56 +263,62 @@ func update[T any](config T, cli *T) T {
 }
 
 // Move the loaded configuration file global options into the opts variable
-func SetGlobalOptionsFromConfig(config *Config, _ *flags.Parser, opts *Flags, cli CliFlags) error {
-	if config.Global.GithubToken != "" && os.Getenv("EGET_GITHUB_TOKEN") == "" {
-		os.Setenv("EGET_GITHUB_TOKEN", config.Global.GithubToken)
+func (app *Application) SetGlobalOptionsFromConfig() error {
+
+	if app.Config.Global.GithubToken != "" && os.Getenv("EGET_GITHUB_TOKEN") == "" {
+		os.Setenv("EGET_GITHUB_TOKEN", app.Config.Global.GithubToken)
 	}
 
-	opts.Tag = update("", cli.Tag)
-	opts.Prerelease = update(false, cli.Prerelease)
-	opts.Source = update(config.Global.Source, cli.Source)
-	targ, err := home.Expand(config.Global.Target)
+	app.Opts.Tag = update("", app.cli.Tag)
+	app.Opts.Prerelease = update(false, app.cli.Prerelease)
+	app.Opts.Source = update(app.Config.Global.Source, app.cli.Source)
+	targ, err := home.Expand(app.Config.Global.Target)
 	if err != nil {
 		return err
 	}
-	opts.Output = update(targ, cli.Output)
-	opts.System = update(config.Global.System, cli.System)
-	opts.ExtractFile = update("", cli.ExtractFile)
-	opts.All = update(config.Global.All, cli.All)
-	opts.Quiet = update(config.Global.Quiet, cli.Quiet)
-	opts.DLOnly = update(config.Global.DownloadOnly, cli.DLOnly)
-	opts.UpgradeOnly = update(config.Global.UpgradeOnly, cli.UpgradeOnly)
-	opts.Asset = update([]string{}, cli.Asset)
-	opts.Hash = update(config.Global.ShowHash, cli.Hash)
-	opts.Verify = update("", cli.Verify)
-	opts.Remove = update(false, cli.Remove)
-	opts.DisableSSL = update(false, cli.DisableSSL)
+
+	app.Opts.Output = update(targ, app.cli.Output)
+	app.Opts.System = update(app.Config.Global.System, app.cli.System)
+	app.Opts.ExtractFile = update("", app.cli.ExtractFile)
+	app.Opts.All = update(app.Config.Global.All, app.cli.All)
+	app.Opts.Quiet = update(app.Config.Global.Quiet, app.cli.Quiet)
+	app.Opts.DLOnly = update(app.Config.Global.DownloadOnly, app.cli.DLOnly)
+	app.Opts.UpgradeOnly = update(app.Config.Global.UpgradeOnly, app.cli.UpgradeOnly)
+	app.Opts.Asset = update([]string{}, app.cli.Asset)
+	app.Opts.Hash = update(app.Config.Global.ShowHash, app.cli.Hash)
+	app.Opts.Verify = update("", app.cli.Verify)
+	app.Opts.Remove = update(false, app.cli.Remove)
+	app.Opts.DisableSSL = update(false, app.cli.DisableSSL)
+
 	return nil
 }
 
 // Move the loaded configuration file project options into the opts variable
-func SetProjectOptionsFromConfig(config *Config, _ *flags.Parser, opts *Flags, cli CliFlags, projectName string) error {
-	for name, repo := range config.Repositories {
-		if name == projectName {
-			opts.All = update(repo.All, cli.All)
-			opts.Asset = update(repo.AssetFilters, cli.Asset)
-			opts.DLOnly = update(repo.DownloadOnly, cli.DLOnly)
-			opts.ExtractFile = update(repo.File, cli.ExtractFile)
-			opts.Hash = update(repo.ShowHash, cli.Hash)
-			targ, err := home.Expand(repo.Target)
-			if err != nil {
-				return err
-			}
-			opts.Output = update(targ, cli.Output)
-			opts.Quiet = update(repo.Quiet, cli.Quiet)
-			opts.Source = update(repo.Source, cli.Source)
-			opts.System = update(repo.System, cli.System)
-			opts.Tag = update(repo.Tag, cli.Tag)
-			opts.UpgradeOnly = update(repo.UpgradeOnly, cli.UpgradeOnly)
-			opts.Verify = update(repo.Verify, cli.Verify)
-			opts.DisableSSL = update(repo.DisableSSL, cli.DisableSSL)
-			break
+func (app *Application) SetProjectOptionsFromConfig(projectName string) error {
+	for name, repo := range app.Config.Repositories {
+		if name != projectName {
+			continue
 		}
+		app.Opts.All = update(repo.All, app.cli.All)
+		app.Opts.Asset = update(repo.AssetFilters, app.cli.Asset)
+		app.Opts.DLOnly = update(repo.DownloadOnly, app.cli.DLOnly)
+		app.Opts.ExtractFile = update(repo.File, app.cli.ExtractFile)
+		app.Opts.Hash = update(repo.ShowHash, app.cli.Hash)
+		targ, err := home.Expand(repo.Target)
+		if err != nil {
+			return err
+		}
+		app.Opts.Output = update(targ, app.cli.Output)
+		app.Opts.Quiet = update(repo.Quiet, app.cli.Quiet)
+		app.Opts.Source = update(repo.Source, app.cli.Source)
+		app.Opts.System = update(repo.System, app.cli.System)
+		app.Opts.Tag = update(repo.Tag, app.cli.Tag)
+		app.Opts.UpgradeOnly = update(repo.UpgradeOnly, app.cli.UpgradeOnly)
+		app.Opts.Verify = update(repo.Verify, app.cli.Verify)
+		app.Opts.DisableSSL = update(repo.DisableSSL, app.cli.DisableSSL)
+
+		break
 	}
+
 	return nil
 }

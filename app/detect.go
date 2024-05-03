@@ -328,7 +328,7 @@ func DetermineCorrectDetector(opts *Flags) (detector Detector, err error) {
 	detectors := make([]Detector, len(opts.Asset))
 
 	for i, a := range opts.Asset {
-		anti := strings.HasPrefix(a, "^")
+		anti := strings.HasPrefix(a, "^") || strings.HasPrefix(a, "!")
 
 		if anti {
 			a = a[1:]

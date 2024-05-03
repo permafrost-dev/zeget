@@ -198,9 +198,16 @@ func SetIf[T interface{}](condition bool, original T, newValue T) T {
 	return original
 }
 
-func Fatal(a ...interface{}) {
+func Fatal(a ...interface{}) error {
 	fmt.Fprintln(os.Stderr, a...)
 	os.Exit(1)
+
+	return a[0].(error)
+}
+
+func FatalHandler(err error) error {
+	Fatal(err)
+	return err
 }
 
 func FatalIf(err error, a ...interface{}) {
