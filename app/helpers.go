@@ -139,7 +139,8 @@ func FindChecksumAsset(asset Asset, assets []Asset) Asset {
 // IsDefinitelyNotExec returns true if the file is definitely not an executable.
 func IsDefinitelyNotExec(file string) bool {
 	// file is definitely not executable if it is .deb, .1, or .txt
-	return strings.HasSuffix(file, ".deb") || strings.HasSuffix(file, ".1") ||
+	return strings.HasSuffix(file, ".deb") ||
+		strings.HasSuffix(file, ".1") ||
 		strings.HasSuffix(file, ".txt")
 }
 
