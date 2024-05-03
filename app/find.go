@@ -214,6 +214,6 @@ func (f *GithubSourceFinder) Find() ([]Asset, error) {
 		Name:        name,
 		DownloadURL: fmt.Sprintf("https://github.com/%s/tarball/%s/%s", f.Repo, f.Tag, name),
 	}
-	
+
 	return []Asset{asset}, nil
 }
