@@ -9,26 +9,13 @@ linters:
   fast: true
   enable:
     # - cyclop
-    # - gocyclo
     - govet
     # - maintidx
     - misspell
     - unused
-    ##- unparam
-    #- errcheck
-    #- funlen
-    #- gocritic
     - gocyclo
-    #- goimports
-    #- gosec
-    #- gosimple
-    #- ineffassign
     - nestif
     - staticcheck
-    #- revive
-    #- staticcheck
-    #- typecheck
-    #- unused
 
 severity:
   default-severity: warning
@@ -36,40 +23,76 @@ severity:
 
 linters-settings:
   gocyclo:
-    min-complexity: 35
-
+    min-complexity: 5
   funlen:
     lines: 100
     statements: 80
-
   gocritic:
     disabled-checks:
       - exitAfterDefer
-
   gosec:
     severity: medium
     config:
       G301: "0755" # Maximum allowed permissions mode for os.Mkdir and os.MkdirAll - Default: "0750"
       G302: "0644" # Maximum allowed permissions mode for os.OpenFile and os.Chmod - Default: "0600"
       G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
-
   maintidx:
     under: 150
-
-  cyclop:
-    # The maximal code complexity to report.
-    # Default: 10
-    max-complexity: 30
-    # The maximal average package complexity.
-    # If it's higher than 0.0 (float) the check is enabled
-    # Default: 0.0
-    package-average: 0.0
-    # Should ignore tests.
-    # Default: false
-    skip-tests: true
-
   misspell:
     locale: US
-
   nestif:
     min-complexity: 4  # Minimal complexity of if statements to report. - Default: 5
+
+output:
+  # The formats used to render issues.
+  # Format: `colored-line-number`, `line-number`, `json`, `colored-tab`, `tab`, `checkstyle`, `code-climate`, `junit-xml`, `github-actions`, `teamcity`
+  # Output path can be either `stdout`, `stderr` or path to the file to write to.
+  #
+  # For the CLI flag (`--out-format`), multiple formats can be specified by separating them by comma.
+  # The output can be specified for each of them by separating format name and path by colon symbol.
+  # Example: "--out-format=checkstyle:report.xml,json:stdout,colored-line-number"
+  # The CLI flag (`--out-format`) override the configuration file.
+  #
+  # Default:
+  #   formats:
+  #     - format: colored-line-number
+  #       path: stdout
+  formats:
+    - format: colored-line-number
+      path: stdout
+
+  # Print lines of code with issue.
+  # Default: true
+  print-issued-lines: false
+  # Print linter name in the end of issue text.
+  # Default: true
+  print-linter-name: false
+  # Make issues output unique by line.
+  # Default: true
+  uniq-by-line: false
+  # Add a prefix to the output file references.
+  # Default: ""
+  path-prefix: ""
+  # Sort results by the order defined in `sort-order`.
+  # Default: false
+  sort-results: true
+  # Order to use when sorting results.
+  # Require `sort-results` to `true`.
+  # Possible values: `file`, `linter`, and `severity`.
+  #
+  # If the severity values are inside the following list, they are ordered in this order:
+  #   1. error
+  #   2. warning
+  #   3. high
+  #   4. medium
+  #   5. low
+  # Either they are sorted alphabetically.
+  #
+  # Default: ["file"]
+  sort-order:
+    - linter
+    - severity
+    - file # filepath, line, and column.
+  # Show statistics per linter.
+  # Default: false
+  show-stats: true
