@@ -157,6 +157,10 @@ func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
 		if len(releases) < 30 {
 			break
 		}
+
+		if page > 20 {
+			break
+		}
 	}
 
 	return nil, fmt.Errorf("no matching tag for '%s'", tag)

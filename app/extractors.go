@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/permafrost-dev/eget/lib/archives"
+	"github.com/permafrost-dev/eget/lib/files"
 	"github.com/permafrost-dev/eget/lib/targetfile"
 	"github.com/ulikunitz/xz"
 )
@@ -53,36 +55,36 @@ func NewExtractor(filename string, tool string, chooser Chooser) Extractor {
 	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
 		return &ArchiveExtractor{
 			File:       chooser,
-			Ar:         NewTarArchive,
+			Ar:         archives.NewTarArchive,
 			Decompress: gunzipper,
 		}
 	case strings.HasSuffix(filename, ".tar.bz2"), strings.HasSuffix(filename, ".tbz"):
 		return &ArchiveExtractor{
 			File:       chooser,
-			Ar:         NewTarArchive,
+			Ar:         archives.NewTarArchive,
 			Decompress: b2unzipper,
 		}
 	case strings.HasSuffix(filename, ".tar.xz"), strings.HasSuffix(filename, ".txz"):
 		return &ArchiveExtractor{
 			File:       chooser,
-			Ar:         NewTarArchive,
+			Ar:         archives.NewTarArchive,
 			Decompress: xunzipper,
 		}
 	case strings.HasSuffix(filename, ".tar.zst"):
 		return &ArchiveExtractor{
 			File:       chooser,
-			Ar:         NewTarArchive,
+			Ar:         archives.NewTarArchive,
 			Decompress: zstdunzipper,
 		}
 	case strings.HasSuffix(filename, ".tar"):
 		return &ArchiveExtractor{
 			File:       chooser,
-			Ar:         NewTarArchive,
+			Ar:         archives.NewTarArchive,
 			Decompress: nounzipper,
 		}
 	case strings.HasSuffix(filename, ".zip"):
 		return &ArchiveExtractor{
-			Ar:   NewZipArchive,
+			Ar:   archives.NewZipArchive,
 			File: chooser,
 		}
 	case strings.HasSuffix(filename, ".gz"):
@@ -118,13 +120,10 @@ func NewExtractor(filename string, tool string, chooser Chooser) Extractor {
 	}
 }
 
-type ArchiveFn func(data []byte, decomp DecompFn) (Archive, error)
-type DecompFn func(r io.Reader) (io.Reader, error)
-
 type ArchiveExtractor struct {
 	File       Chooser
-	Ar         ArchiveFn
-	Decompress DecompFn
+	Ar         archives.ArchiveFunc
+	Decompress archives.DecompressFunc
 }
 
 func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, []ExtractedFile, error) {
@@ -208,7 +207,7 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 	return ExtractedFile{}, candidates, fmt.Errorf("%d candidates for target %v found", len(candidates), a.File)
 }
 
-func (a *ArchiveExtractor) handleDirs(f File, data []byte, dirs []string) (func(to string) error, []string) {
+func (a *ArchiveExtractor) handleDirs(f files.File, data []byte, dirs []string) (func(to string) error, []string) {
 	directories := append(dirs, f.Name)
 
 	extract := func(to string) error {
@@ -216,7 +215,7 @@ func (a *ArchiveExtractor) handleDirs(f File, data []byte, dirs []string) (func(
 		if err != nil {
 			return err
 		}
-		var links []Link
+		var links []files.Link
 		for {
 			subf, err := ar.Next()
 			if err == io.EOF {
@@ -236,13 +235,13 @@ func (a *ArchiveExtractor) handleDirs(f File, data []byte, dirs []string) (func(
 				continue
 			}
 
-			if subf.Type == TypeLink || subf.Type == TypeSymlink {
+			if subf.Type == files.TypeLink || subf.Type == files.TypeSymlink {
 				newname := filepath.Join(to, subf.Name[len(f.Name):])
 				oldname := subf.LinkName
-				links = append(links, Link{
-					newname: newname,
-					oldname: oldname,
-					sym:     subf.Type == TypeSymlink,
+				links = append(links, files.Link{
+					Newname: newname,
+					Oldname: oldname,
+					Sym:     subf.Type == files.TypeSymlink,
 				})
 				continue
 			}
