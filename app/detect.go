@@ -266,21 +266,35 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 		}
 		all = append(all, a)
 	}
+
 	if len(priority) == 1 {
 		return priority[0], nil, nil
-	} else if len(priority) > 1 {
+	}
+
+	if len(priority) > 1 {
 		return Asset{}, priority, fmt.Errorf("%d priority matches found", len(matches))
-	} else if len(matches) == 1 {
+	}
+
+	if len(matches) == 1 {
 		return matches[0], nil, nil
-	} else if len(matches) > 1 {
+	}
+
+	if len(matches) > 1 {
 		return Asset{}, matches, fmt.Errorf("%d matches found", len(matches))
-	} else if len(candidates) == 1 {
+	}
+
+	if len(candidates) == 1 {
 		return candidates[0], nil, nil
-	} else if len(candidates) > 1 {
+	}
+
+	if len(candidates) > 1 {
 		return Asset{}, candidates, fmt.Errorf("%d candidates found (unsure architecture)", len(candidates))
-	} else if len(all) == 1 {
+	}
+
+	if len(all) == 1 {
 		return all[0], nil, nil
 	}
+
 	return Asset{}, all, fmt.Errorf("no candidates found")
 }
 

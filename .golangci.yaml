@@ -1,31 +1,30 @@
 run:
-  timeout: 15s
-  modules-download-mode: readonly
-
   tests: true
-
+  timeout: 30s
+  modules-download-mode: readonly
   allow-parallel-runners: true
-  concurrency: 8
 
 linters:
   disable-all: true
   fast: true
   enable:
-    - gocyclo
+    # - cyclop
+    # - gocyclo
     - govet
-    ##- maintidx
+    # - maintidx
     - misspell
     - unused
     ##- unparam
     #- errcheck
     #- funlen
     #- gocritic
-    #- gocyclo
+    - gocyclo
     #- goimports
     #- gosec
     #- gosimple
     #- ineffassign
-    #- nestif
+    - nestif
+    - staticcheck
     #- revive
     #- staticcheck
     #- typecheck
@@ -37,7 +36,7 @@ severity:
 
 linters-settings:
   gocyclo:
-    min-complexity: 50 #20
+    min-complexity: 35
 
   funlen:
     lines: 100
@@ -55,8 +54,19 @@ linters-settings:
       G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
 
   maintidx:
-    under: 100
-    #25
+    under: 150
+
+  cyclop:
+    # The maximal code complexity to report.
+    # Default: 10
+    max-complexity: 30
+    # The maximal average package complexity.
+    # If it's higher than 0.0 (float) the check is enabled
+    # Default: 0.0
+    package-average: 0.0
+    # Should ignore tests.
+    # Default: false
+    skip-tests: true
 
   misspell:
     locale: US

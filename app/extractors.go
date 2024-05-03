@@ -154,92 +154,47 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 			continue
 		}
 		direct, possible := a.File.Choose(f.Name, f.Dir(), f.Mode)
-		if direct || possible {
-			name := GetRename(f.Name, f.Name)
-
-			fdata, err := ar.ReadAll()
-			if err != nil {
-				return ExtractedFile{}, nil, fmt.Errorf("extract: %w", err)
-			}
-
-			var extract func(to string) error
-
-			extract = func(to string) error {
-				tf := targetfile.GetTargetFile(to, ModeFrom(name, f.Mode), true)
-
-				if tf.Err != nil {
-					return fmt.Errorf("extract: %w", err)
-				}
-
-				return tf.Write(fdata, true)
-			}
-
-			if f.Dir() {
-				dirs = append(dirs, f.Name)
-				extract = func(to string) error {
-					ar, err := a.Ar(data, a.Decompress)
-					if err != nil {
-						return err
-					}
-					var links []Link
-					for {
-						subf, err := ar.Next()
-						if err == io.EOF {
-							break
-						} else if err != nil {
-							return fmt.Errorf("extract: %w", err)
-						} else if !strings.HasPrefix(subf.Name, f.Name) {
-							continue
-						} else if subf.Dir() {
-							os.MkdirAll(filepath.Join(to, subf.Name[len(f.Name):]), 0755)
-							continue
-						} else if subf.Type == TypeLink || subf.Type == TypeSymlink {
-							newname := filepath.Join(to, subf.Name[len(f.Name):])
-							oldname := subf.LinkName
-							links = append(links, Link{
-								newname: newname,
-								oldname: oldname,
-								sym:     subf.Type == TypeSymlink,
-							})
-							continue
-						}
-
-						fdata, err := ar.ReadAll()
-						if err != nil {
-							return fmt.Errorf("extract: %w", err)
-						}
-						name = filepath.Join(to, subf.Name[len(f.Name):])
-
-						tf := targetfile.GetTargetFile(name, subf.Mode, true)
-						if err = tf.Write(fdata, true); err != nil {
-							return fmt.Errorf("extract: %w", err)
-						}
-					}
-
-					for _, l := range links {
-						if err := l.Write(); err != nil && err != os.ErrExist {
-							return fmt.Errorf("extract: %w", err)
-						}
-					}
-
-					return nil
-				}
-			}
-
-			ef := ExtractedFile{
-				Name:        name,
-				ArchiveName: f.Name,
-				mode:        f.Mode,
-				Extract:     extract,
-				Dir:         f.Dir(),
-			}
-			if direct && !multiple {
-				return ef, nil, err
-			}
-			if err == nil {
-				candidates = append(candidates, ef)
-			}
+		if !direct && !possible {
+			continue
 		}
+
+		name := GetRename(f.Name, f.Name)
+
+		fdata, err := ar.ReadAll()
+		if err != nil {
+			return ExtractedFile{}, nil, fmt.Errorf("extract: %w", err)
+		}
+
+		var extract func(to string) error
+
+		extract = func(to string) error {
+			tf := targetfile.GetTargetFile(to, ModeFrom(name, f.Mode), true)
+
+			if tf.Err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+
+			return tf.Write(fdata, true)
+		}
+
+		if f.Dir() {
+			extract, dirs = a.handleDirs(f, data, dirs)
+		}
+
+		ef := ExtractedFile{
+			Name:        name,
+			ArchiveName: f.Name,
+			mode:        f.Mode,
+			Extract:     extract,
+			Dir:         f.Dir(),
+		}
+		if direct && !multiple {
+			return ef, nil, err
+		}
+		if err == nil {
+			candidates = append(candidates, ef)
+		}
+
 	}
 
 	if len(candidates) == 1 {
@@ -251,6 +206,69 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 	}
 
 	return ExtractedFile{}, candidates, fmt.Errorf("%d candidates for target %v found", len(candidates), a.File)
+}
+
+func (a *ArchiveExtractor) handleDirs(f File, data []byte, dirs []string) (func(to string) error, []string) {
+	directories := append(dirs, f.Name)
+
+	extract := func(to string) error {
+		ar, err := a.Ar(data, a.Decompress)
+		if err != nil {
+			return err
+		}
+		var links []Link
+		for {
+			subf, err := ar.Next()
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+
+			if !strings.HasPrefix(subf.Name, f.Name) {
+				continue
+			}
+
+			if subf.Dir() {
+				os.MkdirAll(filepath.Join(to, subf.Name[len(f.Name):]), 0755)
+				continue
+			}
+
+			if subf.Type == TypeLink || subf.Type == TypeSymlink {
+				newname := filepath.Join(to, subf.Name[len(f.Name):])
+				oldname := subf.LinkName
+				links = append(links, Link{
+					newname: newname,
+					oldname: oldname,
+					sym:     subf.Type == TypeSymlink,
+				})
+				continue
+			}
+
+			fdata, err := ar.ReadAll()
+			if err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+			name := filepath.Join(to, subf.Name[len(f.Name):])
+
+			tf := targetfile.GetTargetFile(name, subf.Mode, true)
+			if err = tf.Write(fdata, true); err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+		}
+
+		for _, l := range links {
+			if err := l.Write(); err != nil && err != os.ErrExist {
+				return fmt.Errorf("extract: %w", err)
+			}
+		}
+
+		return nil
+	}
+
+	return extract, directories
 }
 
 // SingleFileExtractor extracts files called 'Name' after decompressing the

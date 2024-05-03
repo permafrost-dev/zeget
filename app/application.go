@@ -36,32 +36,6 @@ func NewApplication() *Application {
 	return result
 }
 
-func (a *Application) write(format string, args ...any) (n int, err error) {
-	return fmt.Fprintf(a.Output, format, args...)
-}
-
-func (app *Application) writeLine(format string, args ...any) (n int, err error) {
-	return app.write(format+"\n", args...)
-}
-
-func (app *Application) writeError(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format, args...)
-}
-
-func (app *Application) writeErrorLine(format string, args ...any) {
-	app.writeError(format+"\n", args...)
-}
-
-func (app *Application) initOutputWriter() {
-	if app.Output == nil && !app.Opts.Quiet {
-		app.Output = os.Stderr
-	}
-
-	if app.Output == nil && app.Opts.Quiet {
-		app.Output = io.Discard
-	}
-}
-
 func (app *Application) Run() error {
 	target, err := app.processFlags()
 
@@ -96,6 +70,7 @@ func (app *Application) Run() error {
 		asset = candidates[choice-1]
 	}
 
+	app.writeLine(asset.DownloadURL) // print the URL
 	// download with progress bar and get the response body
 	body := app.downloadAsset(&asset)
 	app.verifyChecksums(asset, assets, body)
@@ -200,20 +175,20 @@ func (app *Application) processFlags() (string, error) {
 	}
 
 	if len(app.Args) <= 0 {
-		fmt.Println("no target given")
+		app.writeLine("no target given")
 		app.flagparser.WriteHelp(os.Stdout)
 		SuccessExit()
 	}
 
 	if app.Opts.DisableSSL {
-		fmt.Fprintln(os.Stderr, "warning: SSL verification is disabled")
+		app.writeErrorLine("warning: SSL verification is disabled")
 	}
 
 	if app.Opts.Remove {
 		ebin := os.Getenv("EGET_BIN")
 
 		if err := os.Remove(filepath.Join(ebin, target)); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			app.writeErrorLine("%s", err.Error())
 			os.Exit(1)
 		}
 
@@ -225,8 +200,6 @@ func (app *Application) processFlags() (string, error) {
 }
 
 func (app *Application) downloadAsset(asset *Asset) []byte {
-	app.writeLine(asset.DownloadURL) // print the URL
-
 	buf := &bytes.Buffer{}
 	if err := app.Download(asset.DownloadURL, buf); err != nil {
 		Fatal(fmt.Sprintf("%s (URL: %s)", err, asset.DownloadURL))
@@ -263,21 +236,25 @@ func (app *Application) extract(bin ExtractedFile) {
 	out := filepath.Base(bin.Name)
 	if app.Opts.Output == "-" {
 		out = "-"
-	} else if app.Opts.Output != "" && IsDirectory(app.Opts.Output) {
+	}
+
+	if app.Opts.Output != "" && IsDirectory(app.Opts.Output) {
 		out = filepath.Join(app.Opts.Output, out)
-	} else if app.Opts.Output != "" && app.Opts.All {
+	}
+
+	if app.Opts.Output != "" && !IsDirectory(app.Opts.Output) && app.Opts.All {
 		os.MkdirAll(app.Opts.Output, 0755)
 		out = filepath.Join(app.Opts.Output, out)
-	} else {
-		out = SetIf(app.Opts.Output != "", app.Opts.Output, out)
+	}
 
-		// only use $EGET_BIN if all of the following are true
-		// 1. $EGET_BIN is non-empty
-		// 2. --to is not a path (not a path if no path separator is found)
-		// 3. The extracted file is executable
-		if os.Getenv("EGET_BIN") != "" && !strings.ContainsRune(out, os.PathSeparator) && mode&0111 != 0 && !bin.Dir {
-			out = filepath.Join(os.Getenv("EGET_BIN"), out)
-		}
+	out = SetIf(app.Opts.Output != "", app.Opts.Output, out)
+
+	// only use $EGET_BIN if all of the following are true
+	// 1. $EGET_BIN is non-empty
+	// 2. --to is not a path (not a path if no path separator is found)
+	// 3. The extracted file is executable
+	if os.Getenv("EGET_BIN") != "" && !strings.ContainsRune(out, os.PathSeparator) && mode&0111 != 0 && !bin.Dir {
+		out = filepath.Join(os.Getenv("EGET_BIN"), out)
 	}
 
 	if err := bin.Extract(out); err != nil {
@@ -305,23 +282,15 @@ func (app *Application) getFinder(project string) (finder Finder, tool string) {
 		project, _ = RepositoryNameFromGithubUrl(project)
 	}
 
-	repo := project
-	if !IsValidRepositoryReference(repo) {
+	if !IsValidRepositoryReference(project) {
 		Fatal("invalid argument (must be of the form `user/repo`)")
 	}
 
-	tool = ParseRepositoryReference(repo).Name
+	tool = ParseRepositoryReference(project).Name
 
 	if app.Opts.Source {
 		tag := SetIf(app.Opts.Tag != "", "main", app.Opts.Tag)
-
-		finder = &GithubSourceFinder{
-			Repo: repo,
-			Tag:  tag,
-			Tool: tool,
-		}
-
-		return finder, tool
+		return &GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}, tool
 	}
 
 	tag := SetIf(app.Opts.Tag != "", "latest", fmt.Sprintf("tags/%s", app.Opts.Tag))
@@ -333,14 +302,12 @@ func (app *Application) getFinder(project string) (finder Finder, tool string) {
 		mint = Bintime(last, app.Opts.Output)
 	}
 
-	finder = &GithubAssetFinder{
-		Repo:       repo,
+	return &GithubAssetFinder{
+		Repo:       project,
 		Tag:        tag,
 		Prerelease: app.Opts.Prerelease,
 		MinTime:    mint,
-	}
-
-	return finder, tool
+	}, tool
 }
 
 func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verifier, sumAsset Asset, err error) {

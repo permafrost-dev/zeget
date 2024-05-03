@@ -27,9 +27,11 @@ func tokenFrom(s string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		b, err := os.ReadFile(f)
+
+		b, _ := os.ReadFile(f)
 		return strings.TrimRight(string(b), "\r\n"), nil
 	}
+
 	return s, nil
 }
 

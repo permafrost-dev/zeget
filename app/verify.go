@@ -77,7 +77,8 @@ func (s256 *Sha256AssetVerifier) Verify(b []byte) error {
 		return err
 	}
 	expected := make([]byte, sha256.Size)
-	n, err := hex.Decode(expected, data)
+
+	n, _ := hex.Decode(expected, data)
 	if n < sha256.Size {
 		return &Sha256Error{
 			Expected: expected[:n],
@@ -114,7 +115,7 @@ func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	defer resp1.Body.Close()
 
 	// follow the "redirect" in the JSON provided by "browser_download_url":
-	body, err := io.ReadAll(resp1.Body)
+	body, _ := io.ReadAll(resp1.Body)
 	urlpattern := regexp.MustCompile(`"(https://github.com/[\w-_]+/[\w-_]+/releases/download/.+)"`)
 	downloadMatch := urlpattern.FindStringSubmatch(string(body))
 	if downloadMatch == nil {
