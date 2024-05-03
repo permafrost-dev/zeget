@@ -141,10 +141,7 @@ func (app *Application) processFlags() (string, error) {
 		os.Exit(0)
 	}
 
-	app.Config, err = InitializeConfig()
-	if err != nil {
-		return "", err
-	}
+	app.initializeConfig()
 
 	if err := SetGlobalOptionsFromConfig(app.Config, app.flagparser, &app.Opts, app.cli); err != nil {
 		return "", err

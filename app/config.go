@@ -51,12 +51,12 @@ type Config struct {
 	Repositories map[string]ConfigRepository
 }
 
-func LoadConfigurationFile(path string) (Config, error) {
+func LoadConfigurationFile(path string) (*Config, error) {
 	var conf Config
 	meta, err := toml.DecodeFile(path, &conf)
 
 	if err != nil {
-		return conf, err
+		return &conf, err
 	}
 
 	meta, err = toml.DecodeFile(path, &conf.Repositories)
@@ -69,10 +69,10 @@ func LoadConfigurationFile(path string) (Config, error) {
 
 	conf.Meta.MetaData = &meta
 
-	return conf, err
+	return &conf, err
 }
 
-func GetOSConfigPath(homePath string) string {
+func GetOSConfigPath(appName string, homePath string) string {
 	var configDir string
 
 	defaultConfig := map[string]string{
@@ -94,43 +94,82 @@ func GetOSConfigPath(homePath string) string {
 		configDir = filepath.Join(homePath, defaultConfig[goos])
 	}
 
-	return filepath.Join(configDir, "eget", "eget.toml")
+	return filepath.Join(configDir, appName, appName+".toml")
 }
 
-func InitializeConfig() (*Config, error) {
-	var err error
-	var config Config
+func (app *Application) tryLoadingConfigFiles(config *Config, homePath string, appName string) (*Config, error) {
+	var err error = nil
+	var cfg *Config = config
+	var filenames = []string{}
 
-	homePath, _ := os.UserHomeDir()
+	if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok && configFilePath != "" {
+		filenames = append(filenames, configFilePath)
+	}
+
+	filenames = append(filenames, homePath+"/."+appName+".toml")
+	filenames = append(filenames, appName+".toml")
+	filenames = append(filenames, GetOSConfigPath(appName, homePath))
+
+	for _, filename := range filenames {
+		if filename == "" {
+			continue
+		}
+		_, err := os.Stat(filename)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+
+		if cfg, err = LoadConfigurationFile(filename); err == nil {
+			return cfg, nil
+		}
+
+		return nil, fmt.Errorf("%s: %w", filename, err)
+	}
+
+	if err == nil {
+		err = fmt.Errorf("no configuration file found")
+	}
+
+	return &Config{}, err
+}
+
+func (app *Application) initializeConfig() {
+	var err error = nil
+	var config *Config = nil
+
 	appName := "eget"
+	homePath, _ := os.UserHomeDir()
+	config, err = app.tryLoadingConfigFiles(config, homePath, appName)
 
-	if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok {
-		if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("%s: %w", configFilePath, err)
-		}
-	} else {
-		configFilePath := homePath + "/." + appName + ".toml"
-		if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("%s: %w", configFilePath, err)
-		}
-	}
+	// if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok {
+	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+	// 		return fmt.Errorf("%s: %w", configFilePath, err)
+	// 	}
+	// }
+
+	// if config == nil {
+	// 	configFilePath := homePath + "/." + appName + ".toml"
+	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+	// 		return fmt.Errorf("%s: %w", configFilePath, err)
+	// 	}
+	// }
+
+	// if err != nil {
+	// 	configFilePath := appName + ".toml"
+	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+	// 		return fmt.Errorf("%s: %w", configFilePath, err)
+	// 	}
+	// }
+
+	// configFallBackPath :=
+	// if err != nil && configFallBackPath != "" {
+	// 	if config, err = LoadConfigurationFile(configFallBackPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+	// 		return fmt.Errorf("%s: %w", configFallBackPath, err)
+	// 	}
+	// }
 
 	if err != nil {
-		configFilePath := appName + ".toml"
-		if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("%s: %w", configFilePath, err)
-		}
-	}
-
-	configFallBackPath := GetOSConfigPath(homePath)
-	if err != nil && configFallBackPath != "" {
-		if config, err = LoadConfigurationFile(configFallBackPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("%s: %w", configFallBackPath, err)
-		}
-	}
-
-	if err != nil {
-		config = Config{
+		app.Config = &Config{
 			Global: ConfigGlobal{
 				All:          false,
 				DownloadOnly: false,
@@ -142,8 +181,7 @@ func InitializeConfig() (*Config, error) {
 			},
 			Repositories: make(map[string]ConfigRepository, 0),
 		}
-
-		return &config, nil
+		return
 	}
 
 	delete(config.Repositories, "global")
@@ -180,7 +218,6 @@ func InitializeConfig() (*Config, error) {
 
 	// set default repository values
 	for name, repo := range config.Repositories {
-
 		if !config.Meta.MetaData.IsDefined(name, "all") {
 			repo.All = config.Global.All
 		}
@@ -216,7 +253,7 @@ func InitializeConfig() (*Config, error) {
 		config.Repositories[name] = repo
 	}
 
-	return &config, nil
+	app.Config = config
 }
 
 func update[T any](config T, cli *T) T {
