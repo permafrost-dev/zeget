@@ -306,25 +306,26 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 // AllDetector, which will just return all assets. Otherwise we use the
 // --system pair provided by the user, or the runtime.GOOS/runtime.GOARCH
 // pair by default (the host system OS/Arch pair).
-func DetermineCorrectDetector(opts *Flags) (detector Detector, err error) {
-	var system Detector
-
-	system, err = NewSystemDetector(runtime.GOOS, runtime.GOARCH)
-
-	if len(opts.System) > 2 && opts.System != "all" && strings.Contains(opts.System, "/") {
-		split := strings.Split(opts.System, "/")
-		system, err = NewSystemDetector(split[0], split[1])
-	}
-
-	if opts.System == "all" {
-		system = &AllDetector{}
-	}
-
-	if len(opts.Asset) == 0 {
-		return system, err
+func DetermineCorrectDetector(opts *Flags, system *SystemDetector) (detector Detector, err error) {
+	if system == nil {
+		system, _ = NewSystemDetector(runtime.GOOS, runtime.GOARCH)
 	}
 
 	detector = system
+
+	if len(opts.System) > 2 && opts.System != "all" && strings.Contains(opts.System, "/") {
+		split := strings.Split(opts.System, "/")
+		detector, err = NewSystemDetector(split[0], split[1])
+	}
+
+	if opts.System == "all" {
+		detector = &AllDetector{}
+	}
+
+	if len(opts.Asset) == 0 {
+		return detector, err
+	}
+
 	detectors := make([]Detector, len(opts.Asset))
 
 	for i, a := range opts.Asset {

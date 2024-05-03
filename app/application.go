@@ -49,7 +49,7 @@ func (app *Application) Run() {
 	FatalIf(err)
 
 	assetWrapper := NewAssetWrapper(assets)
-	detector, err := DetermineCorrectDetector(&app.Opts)
+	detector, err := DetermineCorrectDetector(&app.Opts, nil)
 	FatalIf(err)
 
 	// get the url and candidates from the detector

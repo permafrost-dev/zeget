@@ -3,6 +3,7 @@ package app_test
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"testing"
 
 	"github.com/permafrost-dev/eget/app"
@@ -241,7 +242,8 @@ func TestDetermineCorrectDetector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := app.DetermineCorrectDetector(&tt.flags)
+			system, _ := app.NewSystemDetector(runtime.GOOS, runtime.GOARCH)
+			got, err := app.DetermineCorrectDetector(&tt.flags, system)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DetermineCorrectDetector() error = %v, wantErr %v", err, tt.wantErr)
 				return
