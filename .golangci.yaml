@@ -4,10 +4,15 @@ run:
   modules-download-mode: readonly
   allow-parallel-runners: true
 
+severity:
+  default-severity: warning
+  case-sensitive: false
+
 linters:
   disable-all: true
   fast: true
   enable:
+    - funlen
     - gocyclo
     - govet
     - misspell
@@ -16,25 +21,12 @@ linters:
     - staticcheck
     - unused
 
-severity:
-  default-severity: warning
-  case-sensitive: false
-
 linters-settings:
+  funlen:
+    lines: 150
+    statements: 105
   gocyclo:
     min-complexity: 20
-  funlen:
-    lines: 100
-    statements: 80
-  gocritic:
-    disabled-checks:
-      - exitAfterDefer
-  gosec:
-    severity: medium
-    config:
-      G301: "0755" # Maximum allowed permissions mode for os.Mkdir and os.MkdirAll - Default: "0750"
-      G302: "0644" # Maximum allowed permissions mode for os.OpenFile and os.Chmod - Default: "0600"
-      G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
   misspell:
     locale: US
   nestif:
