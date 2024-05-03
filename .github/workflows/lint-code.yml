@@ -19,7 +19,7 @@ permissions:
   pull-requests: read
   # Optional: Allow write access to checks to allow the action to annotate code in the PR.
   checks: write
-  
+
 jobs:
   run-golangci-lint:
     runs-on: ubuntu-latest
@@ -39,3 +39,4 @@ jobs:
           version: latest
           args: --timeout=5m --out-format=github-actions
           skip-save-cache: false
+          

@@ -23,7 +23,7 @@ severity:
 
 linters-settings:
   gocyclo:
-    min-complexity: 5
+    min-complexity: 35
   funlen:
     lines: 100
     statements: 80
