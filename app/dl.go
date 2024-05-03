@@ -45,14 +45,14 @@ func getGithubToken() (string, error) {
 	return "", ErrNoToken
 }
 
-func SetAuthHeader(req *http.Request) *http.Request {
+func SetAuthHeader(req *http.Request, disableSSL bool) *http.Request {
 	token, err := getGithubToken()
 	if err != nil && !errors.Is(err, ErrNoToken) {
 		fmt.Fprintln(os.Stderr, "warning: not using github token:", err)
 	}
 
 	if req.URL.Scheme == "https" && req.Host == "api.github.com" && err == nil {
-		if opts.DisableSSL {
+		if disableSSL {
 			fmt.Fprintln(os.Stderr, "error: cannot use GitHub token if SSL verification is disabled")
 			os.Exit(1)
 		}
@@ -62,7 +62,7 @@ func SetAuthHeader(req *http.Request) *http.Request {
 	return req
 }
 
-func Get(url, accept string) (*http.Response, error) {
+func Get(url, accept string, disableSSL bool) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
@@ -70,13 +70,13 @@ func Get(url, accept string) (*http.Response, error) {
 	}
 
 	req.Header.Set("Accept", accept)
-	
-	req = SetAuthHeader(req)
+
+	req = SetAuthHeader(req, disableSSL)
 
 	proxyClient := &http.Client{
 		Transport: &http.Transport{
 			Proxy:           http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: opts.DisableSSL},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: disableSSL},
 		},
 	}
 
@@ -84,15 +84,15 @@ func Get(url, accept string) (*http.Response, error) {
 }
 
 func GetJson(url string) (*http.Response, error) {
-	return Get(url, AcceptGitHubJSON)
+	return Get(url, AcceptGitHubJSON, false)
 }
 
 func GetBinaryFile(url string) (*http.Response, error) {
-	return Get(url, AcceptBinary)
+	return Get(url, AcceptBinary, false)
 }
 
 func GetText(url string) (*http.Response, error) {
-	return Get(url, AcceptText)
+	return Get(url, AcceptText, false)
 }
 
 type RateLimitJson struct {
@@ -141,9 +141,9 @@ func GetRateLimit() (RateLimit, error) {
 	return parsed.Resources["core"], err
 }
 
-func getDownloadProgressBar(size int64) *pb.ProgressBar {
+func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
 	var pbout io.Writer = os.Stderr
-	if opts.Quiet {
+	if app.Opts.Quiet {
 		pbout = io.Discard
 	}
 
@@ -173,7 +173,7 @@ func getDownloadProgressBar(size int64) *pb.ProgressBar {
 // 'getbar' function allows the caller to construct a progress bar given the
 // size of the file being downloaded, and the download will write to the
 // returned progress bar.
-func Download(url string, out io.Writer) error {
+func (app *Application) Download(url string, out io.Writer) error {
 	if IsLocalFile(url) {
 		f, err := os.Open(url)
 		if err != nil {
@@ -198,7 +198,7 @@ func Download(url string, out io.Writer) error {
 		return fmt.Errorf("download error: %d: %s", resp.StatusCode, body)
 	}
 
-	bar := getDownloadProgressBar(resp.ContentLength)
+	bar := app.getDownloadProgressBar(resp.ContentLength)
 	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
 
 	return err
