@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"fmt"
 	"reflect"
 	"runtime"
 	"testing"
@@ -107,8 +106,6 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotMatch, gotCandidates, err := tt.detector.Detect(tt.assets)
-			fmt.Printf("gotMatch: %v, gotCandidates: %v, err: %v\n", gotMatch, gotCandidates, err)
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SingleAssetDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return

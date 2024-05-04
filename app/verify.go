@@ -8,25 +8,34 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+
+	"github.com/permafrost-dev/eget/lib/download"
 )
 
-type VerifyChecksumResult uint8
+type VerifyChecksumResult byte
 
 const (
-	VerifyChecksumNone               VerifyChecksumResult = 0
-	VerifyChecksumSuccess            VerifyChecksumResult = 1
-	VerifyChecksumVerificationFailed VerifyChecksumResult = 2
-	VerifyChecksumFailedNoVerifier   VerifyChecksumResult = 3
+	VerifyChecksumNone               VerifyChecksumResult = iota
+	VerifyChecksumSuccess            VerifyChecksumResult = iota
+	VerifyChecksumVerificationFailed VerifyChecksumResult = iota
+	VerifyChecksumFailedNoVerifier   VerifyChecksumResult = iota
 )
 
 type Verifier interface {
 	Verify(b []byte) error
+	WithClient(client *download.Client) *Verifier
 }
 
 type NoVerifier struct{}
 
 func (n *NoVerifier) Verify(_ []byte) error {
 	return nil
+}
+
+func (n *NoVerifier) WithClient(_ *download.Client) *Verifier {
+	var intf interface{} = n
+	var result Verifier = intf.(Verifier)
+	return &result
 }
 
 type Sha256Error struct {
@@ -40,16 +49,25 @@ func (e *Sha256Error) Error() string {
 
 type Sha256Verifier struct {
 	Expected []byte
+	client   *download.Client
 }
 
-func NewSha256Verifier(expectedHex string) (*Sha256Verifier, error) {
+func NewSha256Verifier(client *download.Client, expectedHex string) (*Sha256Verifier, error) {
 	expected, _ := hex.DecodeString(expectedHex)
 	if len(expected) != sha256.Size {
 		return nil, fmt.Errorf("sha256sum (%s) too small: %d bytes decoded", expectedHex, len(expectedHex))
 	}
 	return &Sha256Verifier{
+		client:   client,
 		Expected: expected,
 	}, nil
+}
+
+func (s256 *Sha256Verifier) WithClient(client *download.Client) *Verifier {
+	s256.client = client
+	var intf interface{} = s256
+	var result Verifier = intf.(Verifier)
+	return &result
 }
 
 func (s256 *Sha256Verifier) Verify(b []byte) error {
@@ -65,6 +83,12 @@ func (s256 *Sha256Verifier) Verify(b []byte) error {
 
 type Sha256Printer struct{}
 
+func (s256 *Sha256Printer) WithClient(_ *download.Client) *Verifier {
+	var intf interface{} = s256
+	var result Verifier = intf.(Verifier)
+	return &result
+}
+
 func (s256 *Sha256Printer) Verify(b []byte) error {
 	sum := sha256.Sum256(b)
 	fmt.Printf("%x\n", sum)
@@ -72,11 +96,19 @@ func (s256 *Sha256Printer) Verify(b []byte) error {
 }
 
 type Sha256AssetVerifier struct {
+	client   *download.Client
 	AssetURL string
 }
 
+func (s256 *Sha256AssetVerifier) WithClient(client *download.Client) *Verifier {
+	s256.client = client
+	var intf interface{} = s256
+	var result Verifier = intf.(Verifier)
+	return &result
+}
+
 func (s256 *Sha256AssetVerifier) Verify(b []byte) error {
-	resp, err := GetJSON(s256.AssetURL)
+	resp, err := s256.client.GetJSON(s256.AssetURL)
 	if err != nil {
 		return err
 	}
@@ -110,14 +142,22 @@ func (s256 *Sha256AssetVerifier) String() string {
 }
 
 type Sha256SumFileAssetVerifier struct {
+	client            *download.Client
 	Sha256SumAssetURL string
 	RealAssetURL      string
 	BinaryName        string
 }
 
+func (s256 *Sha256SumFileAssetVerifier) WithClient(client *download.Client) *Verifier {
+	s256.client = client
+	var intf interface{} = s256
+	var result Verifier = intf.(Verifier)
+	return &result
+}
+
 func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	got := sha256.Sum256(b)
-	resp1, err := GetJSON(s256.Sha256SumAssetURL)
+	resp1, err := s256.client.GetJSON(s256.Sha256SumAssetURL)
 	if err != nil {
 		return err
 	}
@@ -133,7 +173,7 @@ func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 
 	s256.RealAssetURL = downloadMatch[1]
 
-	resp, err := GetText(s256.RealAssetURL)
+	resp, err := s256.client.GetText(s256.RealAssetURL)
 	if err != nil {
 		return err
 	}

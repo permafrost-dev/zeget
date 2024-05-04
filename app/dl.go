@@ -1,24 +1,16 @@
 package app
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/permafrost-dev/eget/lib/home"
 	pb "github.com/schollz/progressbar/v3"
-)
-
-const (
-	AcceptBinary     = "application/octet-stream"
-	AcceptGitHubJSON = "application/vnd.github+json"
-	AcceptText       = "text/plain"
 )
 
 func tokenFrom(s string) (string, error) {
@@ -45,56 +37,6 @@ func getGithubToken() (string, error) {
 		return tokenFrom(os.Getenv("GITHUB_TOKEN"))
 	}
 	return "", ErrNoToken
-}
-
-func SetAuthHeader(req *http.Request, disableSSL bool) *http.Request {
-	token, err := getGithubToken()
-	if err != nil && !errors.Is(err, ErrNoToken) {
-		fmt.Fprintln(os.Stderr, "warning: not using github token:", err)
-	}
-
-	if req.URL.Scheme == "https" && req.Host == "api.github.com" && err == nil {
-		if disableSSL {
-			fmt.Fprintln(os.Stderr, "error: cannot use GitHub token if SSL verification is disabled")
-			os.Exit(1)
-		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	}
-
-	return req
-}
-
-func Get(url, accept string, disableSSL bool) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Accept", accept)
-
-	req = SetAuthHeader(req, disableSSL)
-
-	proxyClient := &http.Client{
-		Transport: &http.Transport{
-			Proxy:           http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: disableSSL},
-		},
-	}
-
-	return proxyClient.Do(req)
-}
-
-func GetJSON(url string) (*http.Response, error) {
-	return Get(url, AcceptGitHubJSON, false)
-}
-
-func GetBinaryFile(url string) (*http.Response, error) {
-	return Get(url, AcceptBinary, false)
-}
-
-func GetText(url string) (*http.Response, error) {
-	return Get(url, AcceptText, false)
 }
 
 type RateLimitJSON struct {
@@ -125,8 +67,9 @@ func (r RateLimit) String() string {
 	)
 }
 
-func GetRateLimit() (RateLimit, error) {
-	resp, err := GetJSON("https://api.github.com/rate_limit")
+func (app *Application) GetRateLimit() (RateLimit, error) {
+	resp, err := app.DownloadClient().GetJSON("https://api.github.com/rate_limit")
+
 	if err != nil {
 		return RateLimit{}, err
 	}
@@ -177,32 +120,5 @@ func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
 // size of the file being downloaded, and the download will write to the
 // returned progress bar.
 func (app *Application) Download(url string, out io.Writer) error {
-	if IsLocalFile(url) {
-		f, err := os.Open(url)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = io.Copy(out, f)
-		return err
-	}
-
-	resp, err := GetBinaryFile(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("download error: %d: %s", resp.StatusCode, body)
-	}
-
-	bar := app.getDownloadProgressBar(resp.ContentLength)
-	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
-
-	return err
+	return app.DownloadClient().Download(url, out, app.getDownloadProgressBar)
 }

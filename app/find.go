@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/permafrost-dev/eget/lib/download"
 )
 
 type Asset struct {
@@ -17,7 +19,7 @@ type Asset struct {
 
 // A Finder returns a list of URLs making up a project's assets.
 type Finder interface {
-	Find() ([]Asset, error)
+	Find(client *download.Client) ([]Asset, error)
 }
 
 // A GithubRelease matches the Assets portion of Github's release API json.
@@ -44,9 +46,9 @@ type GithubAssetFinder struct {
 
 var ErrNoUpgrade = errors.New("requested release is not more recent than current version")
 
-func (f *GithubAssetFinder) Find() ([]Asset, error) {
+func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
 	if f.Prerelease && f.Tag == "latest" {
-		tag, err := f.getLatestTag()
+		tag, err := f.getLatestTag(client)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +57,7 @@ func (f *GithubAssetFinder) Find() ([]Asset, error) {
 
 	// query github's API for this repo/tag pair.
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/%s", f.Repo, f.Tag)
-	resp, err := GetJSON(url)
+	resp, err := client.GetJSON(url)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +70,7 @@ func (f *GithubAssetFinder) Find() ([]Asset, error) {
 			return nil, err
 		}
 		if strings.HasPrefix(f.Tag, "tags/") && resp.StatusCode == http.StatusNotFound {
-			return f.FindMatch()
+			return f.FindMatch(client)
 		}
 		return nil, &GithubError{
 			Status: resp.Status,
@@ -103,12 +105,12 @@ func (f *GithubAssetFinder) Find() ([]Asset, error) {
 	return assets, nil
 }
 
-func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
+func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) {
 	tag := f.Tag[len("tags/"):]
 
 	for page := 1; ; page++ {
 		url := fmt.Sprintf("https://api.github.com/repos/%s/releases?page=%d", f.Repo, page)
-		resp, err := GetJSON(url)
+		resp, err := client.GetJSON(url)
 		if err != nil {
 			return nil, err
 		}
@@ -167,9 +169,9 @@ func (f *GithubAssetFinder) FindMatch() ([]Asset, error) {
 }
 
 // finds the latest pre-release and returns the tag
-func (f *GithubAssetFinder) getLatestTag() (string, error) {
+func (f *GithubAssetFinder) getLatestTag(client *download.Client) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", f.Repo)
-	resp, err := GetJSON(url)
+	resp, err := client.GetJSON(url)
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
@@ -197,7 +199,7 @@ type DirectAssetFinder struct {
 	URL string
 }
 
-func (f *DirectAssetFinder) Find() ([]Asset, error) {
+func (f *DirectAssetFinder) Find(_ *download.Client) ([]Asset, error) {
 	asset := Asset{
 		Name:        f.URL,
 		DownloadURL: f.URL,
@@ -212,7 +214,7 @@ type GithubSourceFinder struct {
 	Tag  string
 }
 
-func (f *GithubSourceFinder) Find() ([]Asset, error) {
+func (f *GithubSourceFinder) Find(_ *download.Client) ([]Asset, error) {
 	name := fmt.Sprintf("%s.tar.gz", f.Tool)
 	asset := Asset{
 		Name:        name,

@@ -90,3 +90,6 @@ build/
 .task/
 
 dist/
+*.db.json
+*.out
+*-coverage.*

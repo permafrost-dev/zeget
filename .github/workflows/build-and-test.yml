@@ -55,12 +55,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Install ginkgo
+        run: go install github.com/onsi/ginkgo/v2/ginkgo
+
       - name: Run unit tests with coverage
-        run: task test-coverage
+        run: ginkgo -cover -r -v --junit-report ginkgo.xml
 
       - name: Upload coverage reports to Codecov
         if: ${{success()}}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage-app.out,./coverage-lib.out
+          files: coverprofile.out,ginkgo.xml
+          #./coverage-app.out,./coverage-lib.out

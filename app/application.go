@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/permafrost-dev/eget/lib/data"
+	"github.com/permafrost-dev/eget/lib/download"
 )
 
 type Application struct {
@@ -23,12 +25,14 @@ type Application struct {
 	Args       []string
 	flagparser *flags.Parser
 	Config     *Config
+	Cache      data.Cache
 }
 
 func NewApplication() *Application {
 	result := &Application{
 		Opts:   Flags{},
 		Output: nil,
+		Cache:  *data.NewCache("./eget.db.json"),
 	}
 
 	result.initOutputWriter()
@@ -36,10 +40,18 @@ func NewApplication() *Application {
 	return result
 }
 
+func (app *Application) DownloadClient() *download.Client {
+	token, _ := getGithubToken()
+	return download.NewClient(token)
+}
+
 func (app *Application) Run() {
 	target, _ := app.processFlags(FatalHandler)
+	app.Cache.LoadFromFile()
+	app.Cache.AddRepository(target, "", []string{}, time.Now().Add(time.Hour*1))
+
 	finder, tool := app.getFinder(target)
-	assets, err := finder.Find()
+	assets, err := finder.Find(app.DownloadClient())
 
 	if err != nil && errors.Is(err, ErrNoUpgrade) {
 		app.writeLine("%s: %v", target, err)
@@ -65,6 +77,8 @@ func (app *Application) Run() {
 	app.writeLine(assetWrapper.Asset.DownloadURL) // print the URL
 	body := app.downloadAsset(assetWrapper.Asset) // download with progress bar and get the response body
 	app.VerifyChecksums(assetWrapper, body)
+
+	fmt.Printf("cache %v\n", app.Cache.Data)
 
 	extractor, err := app.getExtractor(assetWrapper.Asset, tool)
 	FatalIf(err)
@@ -159,7 +173,12 @@ func (app *Application) processFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	}
 
 	if app.cli.Rate {
-		rdat, err := GetRateLimit()
+		rdat, err := app.GetRateLimit()
+		app.Cache.SetRateLimit(
+			rdat.Limit,
+			rdat.Remaining,
+			time.Unix(rdat.Reset, 0).Local(),
+		)
 		FatalIf(err)
 		fmt.Println(rdat)
 		os.Exit(0)
@@ -211,9 +230,17 @@ func (app *Application) processFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 
 func (app *Application) downloadAsset(asset *Asset) []byte {
 	buf := &bytes.Buffer{}
+
+	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, time.Now().Add(time.Hour*1))
+	repo.UpdateCheckedAt()
+	app.Cache.SaveToFile()
+
 	if err := app.Download(asset.DownloadURL, buf); err != nil {
 		Fatal(fmt.Sprintf("%s (URL: %s)", err, asset.DownloadURL))
 	}
+
+	repo.UpdateDownloadedAt(asset.DownloadURL)
+	app.Cache.SaveToFile()
 
 	return buf.Bytes()
 }
@@ -329,7 +356,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 	sumAsset = Asset{}
 
 	if app.Opts.Verify != "" {
-		verifier, err = NewSha256Verifier(app.Opts.Verify)
+		verifier, err = NewSha256Verifier(app.DownloadClient(), app.Opts.Verify)
 		if err != nil {
 			return nil, Asset{}, fmt.Errorf("create Sha256Verifier: %w", err)
 		}
@@ -339,7 +366,11 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 	for _, item := range assets {
 		if item.Name == asset.Name+".sha256sum" || item.Name == asset.Name+".sha256" {
 			app.writeLine("verify against %s", item)
-			return &Sha256AssetVerifier{AssetURL: item.DownloadURL}, item, nil
+
+			verifier := Sha256AssetVerifier{AssetURL: item.DownloadURL}
+			verifier.WithClient(app.DownloadClient())
+
+			return &verifier, item, nil
 		}
 		if strings.Contains(item.Name, "checksum") {
 			binaryURL, err := url.Parse(asset.DownloadURL)
@@ -348,7 +379,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 			}
 			binaryName := path.Base(binaryURL.Path)
 			app.writeLine("verify against %s", item)
-			return &Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName}, item, nil
+			return &Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, client: app.DownloadClient()}, item, nil
 		}
 	}
 
