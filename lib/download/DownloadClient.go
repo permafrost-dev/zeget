@@ -31,13 +31,6 @@ func NewClient(token string) *Client {
 	return result
 }
 
-func setIf[T interface{}](condition bool, original T, newValue T) T {
-	if condition {
-		return newValue
-	}
-	return original
-}
-
 func (dc *Client) GetTokenType() string {
 	return dc.tokenType
 }

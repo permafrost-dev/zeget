@@ -20,7 +20,6 @@ type MockHTTPRequestData struct {
 	URL    string
 }
 
-// Mock HTTP Client
 type MockHTTPClient struct {
 	Requests []MockHTTPRequestData
 	DoFunc   func(req *http.Request) (*http.Response, error)
@@ -61,6 +60,20 @@ var _ = g.Describe("DownloadClient", func() {
 		gm.Expect(dc.Headers).To(gm.Equal(headers))
 	})
 
+	g.It("should set a token", func() {
+		dc := NewClient("")
+		token := "test-token"
+		dc.SetToken(token)
+		gm.Expect(dc.Token).To(gm.Equal(token))
+	})
+
+	g.It("should set a token type", func() {
+		dc := NewClient("")
+		tokenType := "TestType" // the first char of type is auto-capitalized
+		dc.SetTokenType(tokenType)
+		gm.Expect(dc.GetTokenType()).To(gm.Equal(tokenType))
+	})
+
 	g.It("should set accept", func() {
 		dc := NewClient("")
 		dc.SetAccept(AcceptGitHubJSON)
@@ -82,8 +95,10 @@ var _ = g.Describe("DownloadClient", func() {
 			},
 		}
 
-		dc := &Client{}
+		dc := &Client{Token: "test-token"}
 		dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
+		dc.AddHeader("Test-Header", "value")
+		dc.AddHeader("X-Test", "123")
 
 		// Override the getClient method to use the mock client
 		originalGetClient := dc.GetClient
@@ -125,91 +140,3 @@ var _ = g.Describe("DownloadClient", func() {
 		gm.Expect(string(body)).To(gm.Equal("mock body"))
 	})
 })
-
-// func TestSetAccept(t *testing.T) {
-// 	dc := NewDownloadClient("")
-
-// 	// Assuming AcceptContentType is a string for simplicity
-// 	dc.SetAccept(AcceptGitHubJSON)
-
-// 	if dc.Accept != string(AcceptGitHubJSON) {
-// 		t.Errorf("Expected Accept to be %s, got %s", string(AcceptGitHubJSON), dc.Accept)
-// 	}
-// }
-
-// func TestAddHeader(t *testing.T) {
-// 	dc := NewDownloadClient("")
-// 	dc.AddHeader("Test-Header", "value")
-
-// 	if len(dc.Headers) != 1 || dc.Headers[0] != "Test-Header:value" {
-// 		t.Errorf("Expected header 'Test-Header:value', got %+v", dc.Headers)
-// 	}
-// }
-
-// func TestGet(t *testing.T) {
-// 	// Mock HTTP client
-// 	client := &MockHTTPClient{
-// 		DoFunc: func(req *http.Request) (*http.Response, error) {
-// 			return newMockResponse("mock body", http.StatusOK), nil
-// 		},
-// 	})
-
-// 	dc := &DownloadClient{}
-// 	dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
-
-// 	// Override the getClient method to use the mock client
-// 	originalGetClient := dc.GetClient
-// 	dc.CreateClient = func() *http.Client {
-// 		return &http.Client{Transport: client}
-// 	}
-// 	defer func() { dc.CreateClient = originalGetClient }()
-
-// 	resp, err := dc.Get("https://github.com")
-// 	if err != nil {
-// 		t.Errorf("Expected no error, got %v", err)
-// 	}
-
-// 	if resp.StatusCode != http.StatusOK {
-// 		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
-// 	}
-
-// 	body, _ := io.ReadAll(resp.Body)
-// 	if string(body) != "mock body" {
-// 		t.Errorf("Expected body to be 'mock body', got %s", body)
-// 	}
-// }
-
-// func TestGetJSON(t *testing.T) {
-// 	//use snapshot testing:
-// 	//https://pkg.go.dev/github.com/google/go-cmp/cmp#hdr-CanonicalJSON
-// 	// Mock HTTP client
-// 	client := &MockHTTPClient{
-// 		DoFunc: func(req *http.Request) (*http.Response, error) {
-// 			return newMockResponse("mock body", http.StatusOK), nil
-// 		},
-// 	})
-
-// 	dc := &DownloadClient{}
-// 	dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
-
-// 	// Override the getClient method to use the mock client
-// 	originalGetClient := dc.GetClient
-// 	dc.CreateClient = func() *http.Client {
-// 		return &http.Client{Transport: client}
-// 	}
-// 	defer func() { dc.CreateClient = originalGetClient }()
-
-// 	resp, err := dc.GetJSON("https://github.com")
-// 	if err != nil {
-// 		t.Errorf("Expected no error, got %v", err)
-// 	}
-
-// 	if resp.StatusCode != http.StatusOK {
-// 		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
-// 	}
-
-// 	body, _ := io.ReadAll(resp.Body)
-// 	if string(body) != "mock body" {
-// 		t.Errorf("Expected body to be 'mock body', got %s", body)
-// 	}
-// }
