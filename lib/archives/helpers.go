@@ -6,7 +6,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/files"
 )
 
-func tarFileType(typ byte) files.FileType {
+func TarFileType(typ byte) files.FileType {
 	switch typ {
 	case tar.TypeReg:
 		return files.TypeNormal

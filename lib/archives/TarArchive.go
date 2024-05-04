@@ -30,7 +30,7 @@ func (t *TarArchive) Next() (files.File, error) {
 		if err != nil {
 			return files.File{}, err
 		}
-		ft := tarFileType(hdr.Typeflag)
+		ft := TarFileType(hdr.Typeflag)
 		if ft != files.TypeOther {
 			return files.File{
 				Name:     hdr.Name,
