@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	g "github.com/onsi/ginkgo/v2"
+	pb "github.com/schollz/progressbar/v3"
 
 	// . "github.com/onsi/gomega"
 	gm "github.com/onsi/gomega"
@@ -139,5 +140,79 @@ var _ = Describe("DownloadClient", func() {
 
 		body, _ := io.ReadAll(resp.Body)
 		gm.Expect(string(body)).To(gm.Equal("mock body"))
+	})
+
+	It("should get a binary file URL", func() {
+		client := &MockHTTPClient{
+			DoFunc: func(req *http.Request) (*http.Response, error) {
+				return newMockResponse("mock body", http.StatusOK), nil
+			},
+		}
+
+		dc := &Client{}
+		dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
+
+		// Override the getClient method to use the mock client
+		originalGetClient := dc.GetClient
+		dc.CreateClient = func() *http.Client {
+			return &http.Client{Transport: client}
+		}
+		defer func() { dc.CreateClient = originalGetClient }()
+		resp, err := dc.GetBinaryFile("https://github.com")
+		gm.Expect(err).To(gm.BeNil())
+		gm.Expect(resp.StatusCode).To(gm.Equal(http.StatusOK))
+
+		body, _ := io.ReadAll(resp.Body)
+		gm.Expect(string(body)).To(gm.Equal("mock body"))
+	})
+
+	It("should get a text file URL", func() {
+		client := &MockHTTPClient{
+			DoFunc: func(req *http.Request) (*http.Response, error) {
+				return newMockResponse("mock body", http.StatusOK), nil
+			},
+		}
+
+		dc := &Client{}
+		dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
+
+		// Override the getClient method to use the mock client
+		originalGetClient := dc.GetClient
+		dc.CreateClient = func() *http.Client {
+			return &http.Client{Transport: client}
+		}
+		defer func() { dc.CreateClient = originalGetClient }()
+		resp, err := dc.GetText("https://github.com")
+		gm.Expect(err).To(gm.BeNil())
+		gm.Expect(resp.StatusCode).To(gm.Equal(http.StatusOK))
+
+		body, _ := io.ReadAll(resp.Body)
+		gm.Expect(string(body)).To(gm.Equal("mock body"))
+	})
+
+	It("should Download a file", func() {
+		client := &MockHTTPClient{
+			DoFunc: func(req *http.Request) (*http.Response, error) {
+				return newMockResponse("mock body", http.StatusOK), nil
+			},
+			Requests: []MockHTTPRequestData{},
+		}
+
+		dc := &Client{CreateClient: func() *http.Client { return &http.Client{Transport: client} }}
+		dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
+
+		// Override the getClient method to use the mock client
+		originalGetClient := dc.GetClient
+		dc.CreateClient = func() *http.Client {
+			return &http.Client{Transport: client}
+		}
+		defer func() { dc.CreateClient = originalGetClient }()
+
+		var buf bytes.Buffer
+		err := dc.Download("https://github.com", &buf, func(size int64) *pb.ProgressBar {
+			return pb.NewOptions64(size, pb.OptionSetWriter(io.Discard))
+		})
+		gm.Expect(err).To(gm.BeNil())
+		gm.Expect(buf.String()).To(gm.Equal("mock body"))
 	})
 })
