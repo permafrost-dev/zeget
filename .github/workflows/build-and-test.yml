@@ -77,7 +77,6 @@ jobs:
             ${{ runner.os }}-go-
         
       - name: Install ginkgo
-        if: steps.cache-go-packages.outputs.cache-hit != 'true'
         run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: Run unit tests with coverage
