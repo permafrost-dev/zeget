@@ -21,7 +21,7 @@ func TestAllDetector_Detect(t *testing.T) {
 		{
 			name: "Single asset",
 			assets: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 			},
 			wantMatch:      "asset1",
 			wantCandidates: nil,
@@ -30,13 +30,13 @@ func TestAllDetector_Detect(t *testing.T) {
 		{
 			name: "Multiple assets",
 			assets: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
-				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantMatch: "",
 			wantCandidates: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
-				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantErr: true,
 		},
@@ -72,8 +72,8 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 			name:     "Exact match",
 			detector: app.SingleAssetDetector{Asset: "asset1", Anti: false},
 			assets: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
-				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantMatch:      "asset1",
 			wantCandidates: nil,
@@ -83,8 +83,8 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 			name:     "No match",
 			detector: app.SingleAssetDetector{Asset: "asset3", Anti: false},
 			assets: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
-				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantMatch:      "",
 			wantCandidates: nil,
@@ -94,8 +94,8 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 			name:     "Anti match",
 			detector: app.SingleAssetDetector{Asset: "asset1", Anti: true},
 			assets: []app.Asset{
-				app.Asset{Name: "asset1", DownloadURL: "http://example.com/asset1"},
-				app.Asset{Name: "asset2", DownloadURL: "http://example.com/asset2"},
+				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
+				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantMatch:      "asset2",
 			wantCandidates: nil,
@@ -136,8 +136,8 @@ func TestSystemDetector_Detect(t *testing.T) {
 			name:     "Match OS and Arch",
 			detector: linuxAMD64,
 			assets: []app.Asset{
-				app.Asset{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
-				app.Asset{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
+				{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
+				{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
 			},
 			wantMatch:      "program-linux-amd64.tar.gz",
 			wantCandidates: nil,
@@ -147,8 +147,8 @@ func TestSystemDetector_Detect(t *testing.T) {
 			name:     "Match only OS",
 			detector: linuxARM,
 			assets: []app.Asset{
-				app.Asset{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
-				app.Asset{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
+				{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
+				{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
 			},
 			wantMatch:      "program-linux-arm.tar.gz",
 			wantCandidates: nil,
@@ -158,13 +158,13 @@ func TestSystemDetector_Detect(t *testing.T) {
 			name:     "No matches",
 			detector: linuxAMD64,
 			assets: []app.Asset{
-				app.Asset{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
-				app.Asset{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
+				{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
+				{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
 			},
 			wantMatch: "",
 			wantCandidates: []app.Asset{
-				app.Asset{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
-				app.Asset{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
+				{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
+				{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
 			},
 			wantErr: true,
 		},

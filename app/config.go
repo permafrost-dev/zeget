@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,6 +49,15 @@ type Config struct {
 	Repositories map[string]ConfigRepository
 }
 
+func BuildConfigurationFilename(paths ...string) string {
+	var result string
+	if len(paths) > 0 {
+		result = filepath.Join(paths...)
+	}
+
+	return filepath.Join(result, "."+ApplicationName+".toml")
+}
+
 func LoadConfigurationFile(path string) (*Config, error) {
 	var conf Config
 	meta, err := toml.DecodeFile(path, &conf)
@@ -71,7 +79,7 @@ func LoadConfigurationFile(path string) (*Config, error) {
 	return &conf, err
 }
 
-func GetOSConfigPath(appName string, homePath string) string {
+func GetOSConfigPath(homePath string) string {
 	var configDir string
 
 	defaultConfig := map[string]string{
@@ -93,10 +101,11 @@ func GetOSConfigPath(appName string, homePath string) string {
 		configDir = filepath.Join(homePath, defaultConfig[goos])
 	}
 
-	return filepath.Join(configDir, appName, appName+".toml")
+	return BuildConfigurationFilename(configDir)
+	//return filepath.Join(configDir, ApplicationName, ApplicationName+".toml")
 }
 
-func (app *Application) tryLoadingConfigFiles(config *Config, homePath string, appName string) (*Config, error) {
+func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (*Config, error) {
 	var err error
 	var cfg = config
 	var filenames = []string{}
@@ -105,23 +114,19 @@ func (app *Application) tryLoadingConfigFiles(config *Config, homePath string, a
 		filenames = append(filenames, configFilePath)
 	}
 
-	filenames = append(filenames, homePath+"/."+appName+".toml")
-	filenames = append(filenames, appName+".toml")
-	filenames = append(filenames, GetOSConfigPath(appName, homePath))
+	filenames = append(filenames,
+		BuildConfigurationFilename(homePath),
+		BuildConfigurationFilename(),
+		GetOSConfigPath(homePath),
+	)
 
 	for _, filename := range filenames {
-		if filename == "" {
+		if !IsLocalFile(filename) {
 			continue
 		}
-		_, err := os.Stat(filename)
-		if errors.Is(err, os.ErrNotExist) {
-			continue
-		}
-
 		if cfg, err = LoadConfigurationFile(filename); err == nil {
 			return cfg, nil
 		}
-
 		return nil, fmt.Errorf("%s: %w", filename, err)
 	}
 
@@ -136,36 +141,8 @@ func (app *Application) initializeConfig() {
 	var err error
 	var config *Config
 
-	appName := "eget"
 	homePath, _ := os.UserHomeDir()
-	config, err = app.tryLoadingConfigFiles(config, homePath, appName)
-
-	// if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok {
-	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-	// 		return fmt.Errorf("%s: %w", configFilePath, err)
-	// 	}
-	// }
-
-	// if config == nil {
-	// 	configFilePath := homePath + "/." + appName + ".toml"
-	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-	// 		return fmt.Errorf("%s: %w", configFilePath, err)
-	// 	}
-	// }
-
-	// if err != nil {
-	// 	configFilePath := appName + ".toml"
-	// 	if config, err = LoadConfigurationFile(configFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-	// 		return fmt.Errorf("%s: %w", configFilePath, err)
-	// 	}
-	// }
-
-	// configFallBackPath :=
-	// if err != nil && configFallBackPath != "" {
-	// 	if config, err = LoadConfigurationFile(configFallBackPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-	// 		return fmt.Errorf("%s: %w", configFallBackPath, err)
-	// 	}
-	// }
+	config, err = app.tryLoadingConfigFiles(config, homePath)
 
 	if err != nil {
 		app.Config = &Config{
@@ -180,74 +157,31 @@ func (app *Application) initializeConfig() {
 			},
 			Repositories: make(map[string]ConfigRepository, 0),
 		}
+		app.writeErrorLine("error loading configuration file: %s", err.Error())
 		return
 	}
 
 	delete(config.Repositories, "global")
 
 	// set default global values
-	if !config.Meta.MetaData.IsDefined("global", "all") {
-		config.Global.All = false
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "github_token") {
-		config.Global.GithubToken = ""
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "quiet") {
-		config.Global.Quiet = false
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "download_only") {
-		config.Global.DownloadOnly = false
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "show_hash") {
-		config.Global.ShowHash = false
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "upgrade_only") {
-		config.Global.UpgradeOnly = false
-	}
-
-	if !config.Meta.MetaData.IsDefined("global", "target") {
-		cwd, _ := os.Getwd()
-		config.Global.Target = cwd
-	}
+	config.Global.All = SetIf(!config.Meta.MetaData.IsDefined("global", "system"), config.Global.All, false)
+	config.Global.GithubToken = SetIf(!config.Meta.MetaData.IsDefined("global", "github_token"), config.Global.GithubToken, "")
+	config.Global.Quiet = SetIf(!config.Meta.MetaData.IsDefined("global", "quiet"), config.Global.Quiet, false)
+	config.Global.DownloadOnly = SetIf(!config.Meta.MetaData.IsDefined("global", "download_only"), config.Global.DownloadOnly, false)
+	config.Global.ShowHash = SetIf(!config.Meta.MetaData.IsDefined("global", "show_hash"), config.Global.ShowHash, false)
+	config.Global.UpgradeOnly = SetIf(!config.Meta.MetaData.IsDefined("global", "upgrade_only"), config.Global.UpgradeOnly, false)
+	config.Global.Target = SetIf(!config.Meta.MetaData.IsDefined("global", "target"), config.Global.Target, GetCurrentDirectory())
 
 	// set default repository values
 	for name, repo := range config.Repositories {
-		if !config.Meta.MetaData.IsDefined(name, "all") {
-			repo.All = config.Global.All
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "asset_filters") {
-			repo.AssetFilters = []string{}
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "download_only") {
-			repo.DownloadOnly = config.Global.DownloadOnly
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "quiet") {
-			repo.Quiet = config.Global.Quiet
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "show_hash") {
-			repo.ShowHash = config.Global.ShowHash
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "target") {
-			repo.Target = config.Global.Target
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "upgrade_only") {
-			repo.UpgradeOnly = config.Global.UpgradeOnly
-		}
-
-		if !config.Meta.MetaData.IsDefined(name, "download_source") {
-			repo.Source = config.Global.Source
-		}
+		repo.All = SetIf(!config.Meta.MetaData.IsDefined(name, "all"), repo.All, config.Global.All)
+		repo.AssetFilters = SetIf(!config.Meta.MetaData.IsDefined(name, "asset_filters"), repo.AssetFilters, []string{})
+		repo.DownloadOnly = SetIf(!config.Meta.MetaData.IsDefined(name, "download_only"), repo.DownloadOnly, config.Global.DownloadOnly)
+		repo.Quiet = SetIf(!config.Meta.MetaData.IsDefined(name, "quiet"), repo.Quiet, config.Global.Quiet)
+		repo.ShowHash = SetIf(!config.Meta.MetaData.IsDefined(name, "show_hash"), repo.ShowHash, config.Global.ShowHash)
+		repo.Target = SetIf(!config.Meta.MetaData.IsDefined(name, "target"), repo.Target, config.Global.Target)
+		repo.UpgradeOnly = SetIf(!config.Meta.MetaData.IsDefined(name, "upgrade_only"), repo.UpgradeOnly, config.Global.UpgradeOnly)
+		repo.Source = SetIf(!config.Meta.MetaData.IsDefined(name, "download_source"), repo.Source, config.Global.Source)
 
 		config.Repositories[name] = repo
 	}

@@ -112,6 +112,10 @@ func ParseRepositoryReference(s string) *RepositoryReference {
 
 // IsLocalFile returns true if the file at 's' exists.
 func IsLocalFile(s string) bool {
+	if s == "" {
+		return false
+	}
+
 	_, err := os.Stat(s)
 	return err == nil
 }
@@ -226,4 +230,13 @@ func ConditionalExit(err error) {
 	}
 
 	SuccessExit()
+}
+
+func GetCurrentDirectory() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+
+	return dir
 }
