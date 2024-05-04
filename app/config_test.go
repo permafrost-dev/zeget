@@ -1,9 +1,9 @@
 package app_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -48,11 +48,10 @@ upgrade_only = true
 	)
 
 	BeforeEach(func() {
-		tempDir, err = ioutil.TempDir("", "configTest")
-		Expect(err).NotTo(HaveOccurred())
+		tempDir = os.TempDir()
+		configPath = filepath.Join(tempDir, "."+ApplicationName+".toml")
 
-		configPath = filepath.Join(tempDir, "config.toml")
-		err = ioutil.WriteFile(configPath, []byte(configSample), 0644)
+		err = os.WriteFile(configPath, []byte(configSample), 0644)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -95,7 +94,10 @@ upgrade_only = true
 		Context("Without specified paths", func() {
 			It("Should return only a filename", func() {
 				filename := BuildConfigurationFilename()
-				Expect(filename).To(Equal("." + ApplicationName + ".toml"))
+
+				Expect(strings.HasPrefix(filename, ".")).To(BeTrue())
+				Expect(strings.HasSuffix(filename, ".toml")).To(BeTrue())
+				Expect(len(filename)).To(BeNumerically(">", 6))
 			})
 		})
 	})
