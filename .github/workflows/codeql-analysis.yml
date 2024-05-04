@@ -1,0 +1,36 @@
+name: 'CodeQL Analysis'
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # run every day at 02:30 UTC
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  ENABLE_CODEQL: 'yes'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          build-mode: autobuild
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
