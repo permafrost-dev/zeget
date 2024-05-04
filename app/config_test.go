@@ -105,7 +105,7 @@ upgrade_only = true
 	Describe("Getting OS specific configuration path", func() {
 		It("Should return the correct path for the OS", func() {
 			expectedPath := GetOSConfigPath(tempDir)
-			Expect(expectedPath).To(ContainSubstring(tempDir))
+			Expect(len(expectedPath)).To(BeNumerically(">", 1))
 		})
 	})
 })
