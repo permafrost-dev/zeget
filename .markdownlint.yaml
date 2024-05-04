@@ -1,9 +1,6 @@
-# Default state for all rules
 default: true
-
-# Path to configuration file to extend
 extends: null
 
-MD013: false
-
-MD033: false
+MD013: false # line length
+MD033: false # inline HTML
+MD034: false # bare URLs
