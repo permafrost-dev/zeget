@@ -55,8 +55,27 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # - name: Cache ginkgo
+      #   uses: actions/cache@v4
+      #   id: cache-ginkgo
+      #   with:
+      #     path: ${{ env.GOPATH }}/pkg/mod/github.com/onsi/ginkgo
+      #     key: ginkgo
+
+      - uses: actions/cache@v4
+        id: cache-go-packages
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
         
       - name: Install ginkgo
+        if: steps.cache-go-packages.outputs.cache-hit != 'true'
         run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: Run unit tests with coverage
@@ -68,4 +87,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverprofile.out,ginkgo.xml
-          #./coverage-app.out,./coverage-lib.out
