@@ -9,5 +9,5 @@ import (
 
 func TestDownloadPackage(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "package suite: lib/download")
+	RunSpecs(t, "test suite: lib/download package")
 }

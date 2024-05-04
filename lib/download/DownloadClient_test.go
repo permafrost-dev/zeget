@@ -5,9 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	_ "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2"
 	g "github.com/onsi/ginkgo/v2"
-	_ "github.com/onsi/gomega"
+
+	// . "github.com/onsi/gomega"
 	gm "github.com/onsi/gomega"
 
 	// "testing"
@@ -42,8 +43,8 @@ func newMockResponse(body string, statusCode int) *http.Response {
 	}
 }
 
-var _ = g.Describe("DownloadClient", func() {
-	g.It("should create a new DownloadClient", func() {
+var _ = Describe("DownloadClient", func() {
+	It("should create a new DownloadClient", func() {
 		token := "test-token"
 		dc := NewClient(token)
 
@@ -51,7 +52,7 @@ var _ = g.Describe("DownloadClient", func() {
 		gm.Expect(dc.GetTokenType()).To(gm.Equal("Bearer"))
 	})
 
-	g.It("should set headers", func() {
+	It("should set headers", func() {
 		dc := NewClient("")
 		headers := []string{"header1:value1", "header2:value2"}
 
@@ -60,7 +61,7 @@ var _ = g.Describe("DownloadClient", func() {
 		gm.Expect(dc.Headers).To(gm.Equal(headers))
 	})
 
-	g.It("should set a token", func() {
+	It("should set a token", func() {
 		dc := NewClient("")
 		token := "test-token"
 		dc.SetToken(token)
@@ -81,7 +82,7 @@ var _ = g.Describe("DownloadClient", func() {
 		gm.Expect(dc.Accept).To(gm.Equal(string(AcceptGitHubJSON)))
 	})
 
-	g.It("should add a header", func() {
+	It("should add a header", func() {
 		dc := NewClient("")
 		dc.AddHeader("Test-Header", "value")
 
