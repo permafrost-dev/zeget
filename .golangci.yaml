@@ -73,7 +73,7 @@ output:
   print-issued-lines: false
   print-linter-name: true
   formats:
-    - format: github-actions
+    - format: colored-line-number
   show-stats: true
   sort-results: true
   sort-order:
