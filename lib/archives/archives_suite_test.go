@@ -9,5 +9,5 @@ import (
 
 func TestArchives(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Archives Suite")
+	RunSpecs(t, "test suite: lib/archives package")
 }
