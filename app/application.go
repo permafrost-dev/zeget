@@ -46,7 +46,9 @@ func (app *Application) DownloadClient() *download.Client {
 }
 
 func (app *Application) Run() {
-	target, _ := app.processFlags(FatalHandler)
+	target, _ := app.ProcessFlags(FatalHandler)
+	target = app.ProcessCommands(target)
+
 	app.Cache.LoadFromFile()
 	app.Cache.AddRepository(target, "", []string{}, time.Now().Add(time.Hour*1))
 
@@ -144,7 +146,17 @@ func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []E
 
 type ProcessFlagsErrorHandlerFunc = func(err error) error
 
-func (app *Application) processFlags(errorHandler ProcessFlagsErrorHandlerFunc) (string, error) {
+func (app *Application) ProcessCommands(target string) string {
+	switch target {
+	case "upgrade":
+		app.writeLine("upgrading to the latest version of " + ApplicationName + "...")
+		return ApplicationRepository
+	default:
+		return target
+	}
+}
+
+func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) (string, error) {
 	app.flagparser = flags.NewParser(&app.cli, flags.PassDoubleDash|flags.PrintErrors)
 	app.flagparser.Usage = "[OPTIONS] TARGET"
 

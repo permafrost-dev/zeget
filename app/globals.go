@@ -1,5 +1,6 @@
 package app
 
 const (
-	ApplicationName = "eget"
+	ApplicationName       = "eget"
+	ApplicationRepository = "permafrost-dev/" + ApplicationName
 )
