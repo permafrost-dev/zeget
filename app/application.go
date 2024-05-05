@@ -18,6 +18,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/data"
 	"github.com/permafrost-dev/eget/lib/download"
 	"github.com/permafrost-dev/eget/lib/finders"
+	"github.com/permafrost-dev/eget/lib/verifiers"
 )
 
 type Application struct {
@@ -259,30 +260,30 @@ func (app *Application) downloadAsset(asset *Asset) []byte {
 	return buf.Bytes()
 }
 
-func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) VerifyChecksumResult {
+func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) verifiers.VerifyChecksumResult {
 	verifier, sumAsset, err := app.getVerifier(*wrapper.Asset, wrapper.Assets)
 
 	if err != nil {
 		app.writeLine("Checksum verification failed, could not create a verifier.")
-		return VerifyChecksumFailedNoVerifier
+		return verifiers.VerifyChecksumFailedNoVerifier
 	}
 
 	if err = verifier.Verify(body); err != nil {
 		app.writeLine("Checksum verification failed, %v", err)
-		return VerifyChecksumVerificationFailed
+		return verifiers.VerifyChecksumVerificationFailed
 	}
 
 	if app.Opts.Verify == "" && sumAsset != (Asset{}) {
 		app.writeLine("Checksum verified with %s", path.Base(sumAsset.Name))
-		return VerifyChecksumSuccess
+		return verifiers.VerifyChecksumSuccess
 	}
 
 	if app.Opts.Verify != "" {
 		app.writeLine("Checksum verified")
-		return VerifyChecksumSuccess
+		return verifiers.VerifyChecksumSuccess
 	}
 
-	return VerifyChecksumNone
+	return verifiers.VerifyChecksumNone
 }
 
 func (app *Application) extract(bin ExtractedFile) {
@@ -366,11 +367,11 @@ func (app *Application) getFinder(project string) (finder finders.Finder, tool s
 	}, tool
 }
 
-func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verifier, sumAsset Asset, err error) {
+func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verifiers.Verifier, sumAsset Asset, err error) {
 	sumAsset = Asset{}
 
 	if app.Opts.Verify != "" {
-		verifier, err = NewSha256Verifier(app.DownloadClient(), app.Opts.Verify)
+		verifier, err = verifiers.NewSha256Verifier(app.DownloadClient(), app.Opts.Verify)
 		if err != nil {
 			return nil, Asset{}, fmt.Errorf("create Sha256Verifier: %w", err)
 		}
@@ -381,7 +382,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 		if item.Name == asset.Name+".sha256sum" || item.Name == asset.Name+".sha256" {
 			app.writeLine("verify against %s", item)
 
-			verifier := Sha256AssetVerifier{AssetURL: item.DownloadURL}
+			verifier := verifiers.Sha256AssetVerifier{AssetURL: item.DownloadURL}
 			verifier.WithClient(app.DownloadClient())
 
 			return &verifier, item, nil
@@ -393,15 +394,15 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier Verif
 			}
 			binaryName := path.Base(binaryURL.Path)
 			app.writeLine("verify against %s", item)
-			return &Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, client: app.DownloadClient()}, item, nil
+			return &verifiers.Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, Client: download.NewClient("")}, item, nil
 		}
 	}
 
 	if app.Opts.Hash {
-		return &Sha256Printer{}, Asset{}, nil
+		return &verifiers.Sha256Printer{}, Asset{}, nil
 	}
 
-	return &NoVerifier{}, Asset{}, nil
+	return &verifiers.NoVerifier{}, Asset{}, nil
 }
 
 // Determine which extractor to use. If --download-only is provided, we
