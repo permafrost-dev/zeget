@@ -157,7 +157,7 @@ Application Options:
       --sha256         show the SHA-256 hash of the downloaded asset
       --verify-sha256= verify the downloaded asset checksum against the one provided
       --rate           show GitHub API rate limiting information
-  -r, --remove         remove the given file from $EGET_BIN or the current directory
+  -r, --remove         remove existing target files before downloading
   -v, --version        show version information
   -h, --help           show this help message
   -D, --download-all   download all projects defined in the config file
