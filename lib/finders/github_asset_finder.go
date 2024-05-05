@@ -32,12 +32,13 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 		if err != nil {
 			return nil, err
 		}
-		f.Tag = fmt.Sprintf("tags/%s", tag)
+		f.Tag = "tags/" + tag
 	}
 
 	// query github's API for this repo/tag pair.
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/%s", f.Repo, f.Tag)
 	resp, err := client.GetJSON(url)
+
 	if err != nil {
 		return nil, err
 	}
@@ -77,16 +78,20 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 	}
 
 	// accumulate all assets from the json into a slice
-	assets := make([]Asset, 0, len(release.Assets))
-	for _, a := range release.Assets {
-		assets = append(assets, Asset{Name: a.Name, DownloadURL: a.DownloadURL})
+	assets := make([]Asset, len(release.Assets))
+	for idx, a := range release.Assets {
+		assets[idx] = Asset{Name: a.Name, DownloadURL: a.DownloadURL}
 	}
 
 	return assets, nil
 }
 
 func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, error) {
-	tag := f.Tag[len("tags/"):]
+	var tag = f.Tag
+
+	if strings.HasPrefix(f.Tag, "tags/") {
+		tag = f.Tag[len("tags/"):]
+	}
 
 	for page := 1; ; page++ {
 		url := fmt.Sprintf("https://api.github.com/repos/%s/releases?page=%d", f.Repo, page)
@@ -129,6 +134,7 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 			if strings.Contains(r.Tag, tag) && !r.CreatedAt.Before(f.MinTime) {
 				// we have a winner
 				assets := make([]Asset, 0, len(r.Assets))
+
 				for _, a := range r.Assets {
 					assets = append(assets, Asset{Name: a.Name, DownloadURL: a.DownloadURL})
 				}
@@ -150,26 +156,26 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 
 // finds the latest pre-release and returns the tag
 func (f *GithubAssetFinder) GetLatestTag(client download.ClientContract) (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", f.Repo)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", f.Repo)
 	resp, err := client.GetJSON(url)
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
 
-	var releases []github.Release
+	var rel github.Release
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
-	err = json.Unmarshal(body, &releases)
+	err = json.Unmarshal(body, &rel)
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
 
-	if len(releases) <= 0 {
-		return "", fmt.Errorf("no releases found")
-	}
+	// if len(rel) <= 0 {
+	// 	return "", fmt.Errorf("no releases found")
+	// }
 
-	return releases[0].Tag, nil
+	return rel.Tag, nil
 }

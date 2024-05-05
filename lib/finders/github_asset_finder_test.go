@@ -13,6 +13,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/download"
 	. "github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/github"
+	"github.com/permafrost-dev/eget/lib/utilities"
 	pb "github.com/schollz/progressbar/v3"
 )
 
@@ -52,28 +53,30 @@ func (m MockHTTPClient) GetJSON(url string) (*http.Response, error) {
 
 	var js string
 
-	switch strings.Replace(url, "https://github.com", "", 1) {
-	case "https://api.github.com/repos/testRepo/releases?page=1":
-		js = `[{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}]`
+	before, _, _ := utilities.Cut(url, "?page=")
+	url = before
+
+	statusCode := http.StatusOK
+
+	switch url {
+	case "https://api.github.com/repos/testRepo/releases":
+		js = `[{"tag_name": "v1.0.0", "prerelease": false, "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}]`
 		break
 	case "https://api.github.com/repos/testRepo/releases/latest":
-		js = `{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`
+		js = `{"tag_name": "v1.0.0", "prerelease": false, "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`
 		break
 	case "https://api.github.com/repos/testRepo/releases/v1.0.0":
-		js = `{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`
+		js = `{"tag_name": "v1.0.0", "prerelease": false, "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`
+		break
+	case "https://api.github.com/repos/testRepo/releases/v1.1.0":
+		js = `{"tag_name": "v1.0.0", "prerelease": true, "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`
 		break
 	default:
-		return nil, &github.Error{
-			Status: "404 Not Found",
-			Code:   http.StatusNotFound,
-			Body:   []byte(`{"message":"Not Found","documentation_url":"https://developer.github.com/v3"}`),
-			URL:    url,
-		}
+		statusCode = http.StatusNotFound
+		js = `{"message":"Not Found","documentation_url":"https://developer.github.com/v3"}`
 	}
 
-	// fmt.Printf("request: %s\n%s\n", url, js)
-
-	return newMockResponse(js, http.StatusOK), nil
+	return newMockResponse(js, statusCode), nil
 }
 
 func (m MockHTTPClient) GetBinaryFile(url string) (*http.Response, error) {
@@ -114,15 +117,15 @@ var _ = Describe("GithubAssetFinder", func() {
 	BeforeEach(func() {
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-			case "/repos/testRepo/releases":
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`[{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}]`))
-			case "/repos/testRepo/releases/latest":
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`))
-			case "/repos/testRepo/releases/tags/v1.0.0":
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`))
+			// case "/repos/testRepo/releases":
+			// 	w.WriteHeader(http.StatusOK)
+			// 	w.Write([]byte(`[{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}]`))
+			// case "/repos/testRepo/releases/latest":
+			// 	w.WriteHeader(http.StatusOK)
+			// 	w.Write([]byte(`{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`))
+			// case "/repos/testRepo/releases/tags/v1.0.0":
+			// 	w.WriteHeader(http.StatusOK)
+			// 	w.Write([]byte(`{"tag_name": "v1.0.0", "assets": [{"name": "asset1", "browser_download_url": "http://example.com/asset1"}], "created_at": "2020-01-01T00:00:00Z"}`))
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -137,9 +140,10 @@ var _ = Describe("GithubAssetFinder", func() {
 		}
 
 		assetFinder = &GithubAssetFinder{
-			Repo:    "testRepo",
-			Tag:     "latest",
-			MinTime: time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			Repo:       "testRepo",
+			Tag:        "latest",
+			Prerelease: false,
+			MinTime:    time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 		}
 	})
 
@@ -150,7 +154,8 @@ var _ = Describe("GithubAssetFinder", func() {
 	Describe("Find", func() {
 		Context("with a valid tag", func() {
 			It("should return assets", func() {
-				// assetFinder.Tag = "latest"
+				assetFinder.Tag = "v1.0.0"
+				assetFinder.MinTime = time.Date(2018, 12, 31, 23, 59, 59, 0, time.UTC)
 				// baseURL := server.URL + "/"
 				assets, _ := assetFinder.Find(client)
 				// Expect(err).ToNot(HaveOccurred())
@@ -160,6 +165,18 @@ var _ = Describe("GithubAssetFinder", func() {
 				Expect(assets[0].DownloadURL).To(Equal("http://example.com/asset1"))
 			})
 		})
+
+		// Context("the latest tag and prerelease=true", func() {
+		// 	It("should return assets", func() {
+		// 		assetFinder.Tag = "v1.1.0"
+		// 		assetFinder.Prerelease = true
+		// 		assets, _ := assetFinder.Find(client)
+		// 		fmt.Printf("assets: %v\n", assets)
+		// 		// Expect(err).ToNot(HaveOccurred())
+		// 		Expect(assets[0].Name).To(Equal("asset1"))
+		// 		Expect(assets[0].DownloadURL).To(Equal("http://example.com/asset1"))
+		// 	})
+		// })
 
 		Context("with a tag that does not exist", func() {
 			It("should return an error", func() {
@@ -176,12 +193,46 @@ var _ = Describe("GithubAssetFinder", func() {
 		Context("find a match", func() {
 			It("should return assets", func() {
 				// baseURL := server.URL + "/"
-				assetFinder.Tag = "v1.0.0"
+				assetFinder.Tag = "tags/v1.0.0"
 				assets, err := assetFinder.FindMatch(client)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(assets).To(HaveLen(1))
 				Expect(assets[0].Name).To(Equal("asset1"))
 				Expect(assets[0].DownloadURL).To(Equal("http://example.com/asset1"))
+			})
+		})
+
+		Context("find a match with a tag that does not exist", func() {
+			It("should return an error", func() {
+				assetFinder.Tag = "nonexistent"
+				_, err := assetFinder.FindMatch(client)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("find latest tag", func() {
+			It("should return a tag string", func() {
+				// baseURL := server.URL + "/"
+				tag, err := assetFinder.GetLatestTag(client)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(tag).To(Equal("v1.0.0"))
+			})
+		})
+
+		Context("request a tag that does not exist", func() {
+			It("should return a an error", func() {
+				assetFinder.Prerelease = false
+				assetFinder.Tag = "v3.1.2"
+				_, err := assetFinder.Find(client)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("FindMatch return a an error", func() {
+				assetFinder.Repo = "otherRepo"
+				assetFinder.Prerelease = false
+				assetFinder.Tag = "v3.1.2"
+				_, err := assetFinder.FindMatch(client)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
