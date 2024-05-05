@@ -1,4 +1,4 @@
-package app
+package globals
 
 const (
 	ApplicationName       = "eget"

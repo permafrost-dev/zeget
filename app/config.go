@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
+	"github.com/permafrost-dev/eget/lib/globals"
 	"github.com/permafrost-dev/eget/lib/home"
 )
 
@@ -55,7 +56,7 @@ func BuildConfigurationFilename(paths ...string) string {
 		result = filepath.Join(paths...)
 	}
 
-	return filepath.Join(result, "."+ApplicationName+".toml")
+	return filepath.Join(result, "."+globals.ApplicationName+".toml")
 }
 
 func LoadConfigurationFile(path string) (*Config, error) {
