@@ -13,6 +13,7 @@ import (
 	. "github.com/permafrost-dev/eget/lib/assets"
 )
 
+// async get the modification time of a filesystem file:
 // Bintime returns the modification time of a file or directory.
 func Bintime(bin string, to string) (t time.Time) {
 	file := ""

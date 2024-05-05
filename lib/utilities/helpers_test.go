@@ -13,12 +13,11 @@ import (
 var _ = Describe("Helpers", func() {
 	var (
 		tempDir string
-		err     error
 	)
 
 	BeforeEach(func() {
-		tempDir, err = os.MkdirTemp("", "helpers")
-		Expect(err).NotTo(HaveOccurred())
+		t := GinkgoT()
+		tempDir = t.TempDir()
 	})
 
 	AfterEach(func() {
@@ -31,7 +30,7 @@ var _ = Describe("Helpers", func() {
 			_, err := os.Create(filePath)
 			Expect(err).NotTo(HaveOccurred())
 			// Ensure the file has a modification time by writing to it after creation
-			time.Sleep(1 * time.Second)
+			time.Sleep(200 * time.Millisecond)
 			err = os.WriteFile(filePath, []byte("test data"), 0644)
 			Expect(err).NotTo(HaveOccurred())
 
