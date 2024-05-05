@@ -1,4 +1,4 @@
-package app
+package finders
 
 import (
 	"encoding/json"
@@ -9,34 +9,14 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/download"
+	"github.com/permafrost-dev/eget/lib/github"
 )
-
-type Asset struct {
-	Name        string
-	DownloadURL string
-}
-
-// A Finder returns a list of URLs making up a project's assets.
-type Finder interface {
-	Find(client *download.Client) ([]Asset, error)
-}
-
-// A GithubRelease matches the Assets portion of Github's release API json.
-type GithubRelease struct {
-	Assets []struct {
-		Name        string `json:"name"`
-		URL         string `json:"url"`
-		DownloadURL string `json:"browser_download_url"`
-	} `json:"assets"`
-
-	Prerelease bool      `json:"prerelease"`
-	Tag        string    `json:"tag_name"`
-	CreatedAt  time.Time `json:"created_at"`
-}
 
 // A GithubAssetFinder finds assets for the given Repo at the given tag. Tags
 // must be given as 'tag/<tag>'. Use 'latest' to get the latest release.
+
 type GithubAssetFinder struct {
 	Repo       string
 	Tag        string
@@ -72,7 +52,7 @@ func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
 		if strings.HasPrefix(f.Tag, "tags/") && resp.StatusCode == http.StatusNotFound {
 			return f.FindMatch(client)
 		}
-		return nil, &GithubError{
+		return nil, &github.GithubError{
 			Status: resp.Status,
 			Code:   resp.StatusCode,
 			Body:   body,
@@ -86,7 +66,7 @@ func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
 		return nil, err
 	}
 
-	var release GithubRelease
+	var release github.Release
 	err = json.Unmarshal(body, &release)
 	if err != nil {
 		return nil, err
@@ -122,7 +102,7 @@ func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) 
 			if err != nil {
 				return nil, err
 			}
-			return nil, &GithubError{
+			return nil, &github.GithubError{
 				Status: resp.Status,
 				Code:   resp.StatusCode,
 				Body:   body,
@@ -136,7 +116,7 @@ func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) 
 			return nil, err
 		}
 
-		var releases []GithubRelease
+		var releases []github.Release
 		err = json.Unmarshal(body, &releases)
 		if err != nil {
 			return nil, err
@@ -176,7 +156,7 @@ func (f *GithubAssetFinder) getLatestTag(client *download.Client) (string, error
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
 
-	var releases []GithubRelease
+	var releases []github.Release
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -192,34 +172,4 @@ func (f *GithubAssetFinder) getLatestTag(client *download.Client) (string, error
 	}
 
 	return releases[0].Tag, nil
-}
-
-// A DirectAssetFinder returns the embedded URL directly as the only asset.
-type DirectAssetFinder struct {
-	URL string
-}
-
-func (f *DirectAssetFinder) Find(_ *download.Client) ([]Asset, error) {
-	asset := Asset{
-		Name:        f.URL,
-		DownloadURL: f.URL,
-	}
-
-	return []Asset{asset}, nil
-}
-
-type GithubSourceFinder struct {
-	Tool string
-	Repo string
-	Tag  string
-}
-
-func (f *GithubSourceFinder) Find(_ *download.Client) ([]Asset, error) {
-	name := fmt.Sprintf("%s.tar.gz", f.Tool)
-	asset := Asset{
-		Name:        name,
-		DownloadURL: fmt.Sprintf("https://github.com/%s/tarball/%s/%s", f.Repo, f.Tag, name),
-	}
-
-	return []Asset{asset}, nil
 }

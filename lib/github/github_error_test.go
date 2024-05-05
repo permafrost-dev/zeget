@@ -1,21 +1,21 @@
-package app_test
+package github_test
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/permafrost-dev/eget/app"
+	. "github.com/permafrost-dev/eget/lib/github"
 )
 
 func TestGithubError_Error(t *testing.T) {
 	tests := []struct {
 		name        string
-		githubError app.GithubError
+		githubError GithubError
 		want        string
 	}{
 		{
 			name: "Forbidden error with message",
-			githubError: app.GithubError{
+			githubError: GithubError{
 				Code:   http.StatusForbidden,
 				Status: "403 Forbidden",
 				Body:   []byte(`{"message":"rate limit exceeded","documentation_url":"https://developer.github.com/v3/#rate-limiting"}`),
@@ -25,7 +25,7 @@ func TestGithubError_Error(t *testing.T) {
 		},
 		{
 			name: "Other error without specific message",
-			githubError: app.GithubError{
+			githubError: GithubError{
 				Code:   http.StatusNotFound,
 				Status: "404 Not Found",
 				Body:   []byte(`{"message":"Not Found","documentation_url":"https://developer.github.com/v3"}`),

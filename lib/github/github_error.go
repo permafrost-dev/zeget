@@ -1,4 +1,4 @@
-package app
+package github
 
 import (
 	"encoding/json"

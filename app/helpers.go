@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	. "github.com/permafrost-dev/eget/lib/assets"
 )
 
 // Bintime returns the modification time of a file or directory.

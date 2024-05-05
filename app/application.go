@@ -14,8 +14,10 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/data"
 	"github.com/permafrost-dev/eget/lib/download"
+	"github.com/permafrost-dev/eget/lib/finders"
 )
 
 type Application struct {
@@ -55,7 +57,7 @@ func (app *Application) Run() {
 	finder, tool := app.getFinder(target)
 	assets, err := finder.Find(app.DownloadClient())
 
-	if err != nil && errors.Is(err, ErrNoUpgrade) {
+	if err != nil && errors.Is(err, finders.ErrNoUpgrade) {
 		app.writeLine("%s: %v", target, err)
 		SuccessExit()
 	}
@@ -322,10 +324,10 @@ func (app *Application) extract(bin ExtractedFile) {
 // a DirectAssetFinder. Otherwise we use a GithubAssetFinder. When a Github
 // repo is provided, we assume the repo name is the 'tool' name (for direct
 // URLs, the tool name is unknown and remains empty).
-func (app *Application) getFinder(project string) (finder Finder, tool string) {
+func (app *Application) getFinder(project string) (finder finders.Finder, tool string) {
 	if IsLocalFile(project) || IsNonGithubURL(project) {
 		app.Opts.System = "all"
-		return &DirectAssetFinder{URL: project}, tool
+		return &finders.DirectAssetFinder{URL: project}, tool
 	}
 
 	if IsInvalidGithubURL(project) {
@@ -344,7 +346,7 @@ func (app *Application) getFinder(project string) (finder Finder, tool string) {
 
 	if app.Opts.Source {
 		tag := SetIf(app.Opts.Tag != "", "main", app.Opts.Tag)
-		return &GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}, tool
+		return &finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}, tool
 	}
 
 	tag := SetIf(app.Opts.Tag != "", "latest", fmt.Sprintf("tags/%s", app.Opts.Tag))
@@ -356,7 +358,7 @@ func (app *Application) getFinder(project string) (finder Finder, tool string) {
 		mint = Bintime(last, app.Opts.Output)
 	}
 
-	return &GithubAssetFinder{
+	return &finders.GithubAssetFinder{
 		Repo:       project,
 		Tag:        tag,
 		Prerelease: app.Opts.Prerelease,

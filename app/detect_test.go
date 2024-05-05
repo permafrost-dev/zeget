@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/permafrost-dev/eget/app"
+	. "github.com/permafrost-dev/eget/lib/assets"
 )
 
 func TestAllDetector_Detect(t *testing.T) {
@@ -13,14 +14,14 @@ func TestAllDetector_Detect(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		assets         []app.Asset
+		assets         []Asset
 		wantMatch      string
-		wantCandidates []app.Asset
+		wantCandidates []Asset
 		wantErr        bool
 	}{
 		{
 			name: "Single asset",
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 			},
 			wantMatch:      "asset1",
@@ -29,12 +30,12 @@ func TestAllDetector_Detect(t *testing.T) {
 		},
 		{
 			name: "Multiple assets",
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
 			wantMatch: "",
-			wantCandidates: []app.Asset{
+			wantCandidates: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
@@ -63,7 +64,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 	tests := []struct {
 		name           string
 		detector       app.SingleAssetDetector
-		assets         []app.Asset
+		assets         []Asset
 		wantMatch      string
 		wantCandidates []string
 		wantErr        bool
@@ -71,7 +72,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 		{
 			name:     "Exact match",
 			detector: app.SingleAssetDetector{Asset: "asset1", Anti: false},
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
@@ -82,7 +83,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 		{
 			name:     "No match",
 			detector: app.SingleAssetDetector{Asset: "asset3", Anti: false},
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
@@ -93,7 +94,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 		{
 			name:     "Anti match",
 			detector: app.SingleAssetDetector{Asset: "asset1", Anti: true},
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
 			},
@@ -127,15 +128,15 @@ func TestSystemDetector_Detect(t *testing.T) {
 	tests := []struct {
 		name           string
 		detector       *app.SystemDetector
-		assets         []app.Asset
+		assets         []Asset
 		wantMatch      string
-		wantCandidates []app.Asset
+		wantCandidates []Asset
 		wantErr        bool
 	}{
 		{
 			name:     "Match OS and Arch",
 			detector: linuxAMD64,
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
 				{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
 			},
@@ -146,7 +147,7 @@ func TestSystemDetector_Detect(t *testing.T) {
 		{
 			name:     "Match only OS",
 			detector: linuxARM,
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "program-linux-amd64.tar.gz", DownloadURL: "http://example.com/program-linux-amd64.tar.gz"},
 				{Name: "program-linux-arm.tar.gz", DownloadURL: "http://example.com/program-linux-arm.tar.gz"},
 			},
@@ -157,12 +158,12 @@ func TestSystemDetector_Detect(t *testing.T) {
 		{
 			name:     "No matches",
 			detector: linuxAMD64,
-			assets: []app.Asset{
+			assets: []Asset{
 				{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
 				{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
 			},
 			wantMatch: "",
-			wantCandidates: []app.Asset{
+			wantCandidates: []Asset{
 				{Name: "program-windows-amd64.zip", DownloadURL: "http://example.com/program-windows-amd64.zip"},
 				{Name: "program-macos.dmg", DownloadURL: "http://example.com/program-macos.dmg"},
 			},

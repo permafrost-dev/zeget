@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	. "github.com/permafrost-dev/eget/lib/assets"
 )
 
 // A Detector selects an asset from a list of possibilities.

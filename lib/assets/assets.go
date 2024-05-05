@@ -1,4 +1,9 @@
-package app
+package assets
+
+type Asset struct {
+	Name        string
+	DownloadURL string
+}
 
 type AssetWrapper struct {
 	Assets []Asset
