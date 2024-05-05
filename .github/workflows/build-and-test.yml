@@ -85,7 +85,8 @@ jobs:
           cd app && ginkgo bootstrap; cd ..
           
       - name: Run unit tests with coverage
-        run: ginkgo -cover -r -v --junit-report ginkgo.xml
+        run: go test -cover -v ./lib/** ./app
+        # ginkgo -cover -r -v --junit-report ginkgo.xml
 
       - name: Upload coverage reports to Codecov
         if: ${{success()}}
