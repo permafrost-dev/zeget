@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -37,54 +36,6 @@ func getGithubToken() (string, error) {
 		return tokenFrom(os.Getenv("GITHUB_TOKEN"))
 	}
 	return "", ErrNoToken
-}
-
-type RateLimitJSON struct {
-	Resources map[string]RateLimit
-}
-
-type RateLimit struct {
-	Limit     int
-	Remaining int
-	Reset     int64
-}
-
-func (r RateLimit) ResetTime() time.Time {
-	return time.Unix(r.Reset, 0)
-}
-
-func (r RateLimit) String() string {
-	now := time.Now()
-	rTime := r.ResetTime()
-
-	if rTime.Before(now) {
-		return fmt.Sprintf("Limit: %d, Remaining: %d, Reset: %v", r.Limit, r.Remaining, rTime)
-	}
-
-	return fmt.Sprintf(
-		"Limit: %d, Remaining: %d, Reset: %v (%v)",
-		r.Limit, r.Remaining, rTime, rTime.Sub(now).Round(time.Second),
-	)
-}
-
-func (app *Application) GetRateLimit() (RateLimit, error) {
-	resp, err := app.DownloadClient().GetJSON("https://api.github.com/rate_limit")
-
-	if err != nil {
-		return RateLimit{}, err
-	}
-
-	defer resp.Body.Close()
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return RateLimit{}, err
-	}
-
-	var parsed RateLimitJSON
-	err = json.Unmarshal(b, &parsed)
-
-	return parsed.Resources["core"], err
 }
 
 func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {

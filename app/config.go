@@ -104,7 +104,6 @@ func GetOSConfigPath(homePath string) string {
 	}
 
 	return BuildConfigurationFilename(configDir)
-	//return filepath.Join(configDir, ApplicationName, ApplicationName+".toml")
 }
 
 func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (*Config, error) {

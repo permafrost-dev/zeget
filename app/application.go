@@ -19,6 +19,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/download"
 	. "github.com/permafrost-dev/eget/lib/extraction"
 	"github.com/permafrost-dev/eget/lib/finders"
+	"github.com/permafrost-dev/eget/lib/github"
 	. "github.com/permafrost-dev/eget/lib/globals"
 	. "github.com/permafrost-dev/eget/lib/utilities"
 	"github.com/permafrost-dev/eget/lib/verifiers"
@@ -191,7 +192,7 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	}
 
 	if app.cli.Rate {
-		rdat, err := app.GetRateLimit()
+		rdat, err := github.FetchRateLimit(app.DownloadClient())
 		app.Cache.SetRateLimit(
 			rdat.Limit,
 			rdat.Remaining,
