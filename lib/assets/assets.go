@@ -1,8 +1,11 @@
 package assets
 
+import "time"
+
 type Asset struct {
 	Name        string
 	DownloadURL string
+	ReleaseDate time.Time
 }
 
 type AssetWrapper struct {

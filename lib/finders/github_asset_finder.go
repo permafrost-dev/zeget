@@ -73,6 +73,8 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 		return nil, err
 	}
 
+	release.ProcessReleaseAssets()
+
 	if release.CreatedAt.Before(f.MinTime) {
 		return nil, ErrNoUpgrade
 	}
@@ -80,7 +82,7 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 	// accumulate all assets from the json into a slice
 	assets := make([]Asset, len(release.Assets))
 	for idx, a := range release.Assets {
-		assets[idx] = Asset{Name: a.Name, DownloadURL: a.DownloadURL}
+		assets[idx] = a.CopyToNewAsset()
 	}
 
 	return assets, nil
@@ -128,6 +130,7 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 		}
 
 		for _, r := range releases {
+			r.ProcessReleaseAssets()
 			if !f.Prerelease && r.Prerelease {
 				continue
 			}
@@ -136,7 +139,8 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 				assets := make([]Asset, 0, len(r.Assets))
 
 				for _, a := range r.Assets {
-					assets = append(assets, Asset{Name: a.Name, DownloadURL: a.DownloadURL})
+					assets = append(assets, a.CopyToNewAsset())
+					// Asset{Name: a.Name, DownloadURL: a.DownloadURL})
 				}
 				return assets, nil
 			}
@@ -172,6 +176,8 @@ func (f *GithubAssetFinder) GetLatestTag(client download.ClientContract) (string
 	if err != nil {
 		return "", fmt.Errorf("pre-release finder: %w", err)
 	}
+
+	rel.ProcessReleaseAssets()
 
 	// if len(rel) <= 0 {
 	// 	return "", fmt.Errorf("no releases found")

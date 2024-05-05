@@ -17,6 +17,7 @@ type RepositoryCacheEntry struct {
 	LastCheckAt     time.Time `json:"last_check_at"`
 	LastDownloadAt  time.Time `json:"last_download_at"`
 	LastDownloadTag string    `json:"last_download_tag"`
+	LastReleaseDate time.Time `json:"last_release_date"`
 	ExpiresAt       time.Time `json:"expires_at"`
 	Target          string    `json:"target"`
 	Filters         []string  `json:"filters"`
