@@ -67,6 +67,13 @@ func (pe *PathExpander) Expand(path string) (string, error) {
 // Expand takes a path as input and replaces ~ at the start of the path with the user's
 // home directory. Does nothing if the path does not start with '~'.
 func Expand(path string, homeDirectoryPath ...string) (string, error) {
-	pe := NewPathExpander(homeDirectoryPath[0])
+	var pe *PathExpander
+
+	if len(homeDirectoryPath) == 0 {
+		pe = NewPathExpander()
+	} else {
+		pe = NewPathExpander(homeDirectoryPath[0])
+	}
+
 	return pe.Expand(path)
 }
