@@ -53,10 +53,11 @@ func (app *Application) DownloadClient() *download.Client {
 }
 
 func (app *Application) Run() {
+	app.Cache.LoadFromFile()
+
 	target, _ := app.ProcessFlags(FatalHandler)
 	target = app.ProcessCommands(target)
 
-	app.Cache.LoadFromFile()
 	app.Cache.AddRepository(target, "", []string{}, time.Now().Add(time.Hour*1))
 
 	finder, tool := app.getFinder(target)

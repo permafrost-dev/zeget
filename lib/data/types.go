@@ -24,8 +24,26 @@ type RepositoryCacheEntry struct {
 }
 
 type ApplicationData struct {
-	RateLimit    RateLimit                       `json:"rate_limit"`
-	Repositories map[string]RepositoryCacheEntry `json:"repositories"`
+	RateLimit    RateLimit                        `json:"rate_limit"`
+	Repositories map[string]*RepositoryCacheEntry `json:"repositories"`
+}
+
+func (ad *ApplicationData) GetRepositoryEntryByKey(key string, owner *Cache) *RepositoryCacheEntry {
+	result, found := ad.Repositories[key]
+
+	if found {
+		result.owner = owner
+	}
+
+	return result
+}
+
+func (ad *ApplicationData) SetRepositoryEntryByKey(key string, entry *RepositoryCacheEntry, owner *Cache) {
+	owner.mutex.Lock()
+	defer owner.mutex.Unlock()
+
+	entry.owner = owner
+	ad.Repositories[key] = entry
 }
 
 func (rce *RepositoryCacheEntry) UpdateCheckedAt() {
