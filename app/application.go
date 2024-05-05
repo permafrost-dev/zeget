@@ -235,14 +235,14 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 
 	if app.Opts.Remove {
 		ebin := os.Getenv("EGET_BIN")
+		searchPath := SetIf(ebin == "", ebin, app.Config.Global.Target)
 
-		if err := os.Remove(filepath.Join(ebin, target)); err != nil {
+		fn := filepath.Join(searchPath, filepath.Base(target))
+		if err := os.Remove(fn); err != nil {
 			app.writeErrorLine("%s", err.Error())
-			os.Exit(1)
+		} else {
+			app.writeLine("Removed `%s`", fn)
 		}
-
-		app.writeLine("Removed `%s`", filepath.Join(ebin, target))
-		SuccessExit()
 	}
 
 	return target, nil
