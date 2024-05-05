@@ -26,7 +26,7 @@ type GithubAssetFinder struct {
 
 var ErrNoUpgrade = errors.New("requested release is not more recent than current version")
 
-func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
+func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error) {
 	if f.Prerelease && f.Tag == "latest" {
 		tag, err := f.getLatestTag(client)
 		if err != nil {
@@ -85,7 +85,7 @@ func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
 	return assets, nil
 }
 
-func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) {
+func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, error) {
 	tag := f.Tag[len("tags/"):]
 
 	for page := 1; ; page++ {
@@ -149,7 +149,7 @@ func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) 
 }
 
 // finds the latest pre-release and returns the tag
-func (f *GithubAssetFinder) getLatestTag(client *download.Client) (string, error) {
+func (f *GithubAssetFinder) getLatestTag(client download.ClientContract) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", f.Repo)
 	resp, err := client.GetJSON(url)
 	if err != nil {

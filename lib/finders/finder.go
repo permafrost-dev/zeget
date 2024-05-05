@@ -7,5 +7,5 @@ import (
 
 // A Finder returns a list of URLs making up a project's assets.
 type Finder interface {
-	Find(client *download.Client) ([]assets.Asset, error)
+	Find(client download.ClientContract) ([]assets.Asset, error)
 }

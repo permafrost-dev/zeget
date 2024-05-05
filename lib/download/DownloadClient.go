@@ -11,6 +11,15 @@ import (
 	pb "github.com/schollz/progressbar/v3"
 )
 
+type ClientContract interface {
+	GetClient() *http.Client
+	Get(url string) (*http.Response, error)
+	GetJSON(url string) (*http.Response, error)
+	GetBinaryFile(url string) (*http.Response, error)
+	GetText(url string) (*http.Response, error)
+	Download(url string, out io.Writer, progressBarCallback func(size int64) *pb.ProgressBar) error
+}
+
 type Client struct {
 	Headers      []string
 	Token        string

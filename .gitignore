@@ -2,6 +2,7 @@
 # ignore ginkgo bootstrap files in lib/** dirs
 lib/**/*_suite_test.go
 eget_suite_test.go
+ginkgo.xml
 
 # allow ginkgo bootstrap file for lib test suite
 !lib/lib_suite_test.go

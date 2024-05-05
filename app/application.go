@@ -333,7 +333,8 @@ func (app *Application) extract(bin ExtractedFile) {
 func (app *Application) getFinder(project string) (finder finders.Finder, tool string) {
 	if IsLocalFile(project) || IsNonGithubURL(project) {
 		app.Opts.System = "all"
-		return &finders.DirectAssetFinder{URL: project}, tool
+		var result any = finders.DirectAssetFinder{URL: project}
+		return result.(finders.Finder), tool
 	}
 
 	if IsInvalidGithubURL(project) {
@@ -352,7 +353,9 @@ func (app *Application) getFinder(project string) (finder finders.Finder, tool s
 
 	if app.Opts.Source {
 		tag := SetIf(app.Opts.Tag != "", "main", app.Opts.Tag)
-		return &finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}, tool
+		var result any = finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}
+
+		return result.(finders.Finder), tool
 	}
 
 	tag := SetIf(app.Opts.Tag != "", "latest", fmt.Sprintf("tags/%s", app.Opts.Tag))
