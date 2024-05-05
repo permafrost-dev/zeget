@@ -80,9 +80,8 @@ jobs:
         run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: generate ginkgo bootstrap files
-        run: |
-          /bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash
-          cd app && ginkgo bootstrap; cd ..
+        run: /bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash
+        # cd app && ginkgo bootstrap; cd ..
           
       - name: Run unit tests with coverage
         working-directory: ${{ github.workspace }}
