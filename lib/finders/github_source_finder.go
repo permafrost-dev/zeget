@@ -13,7 +13,7 @@ type GithubSourceFinder struct {
 	Tag  string
 }
 
-func (f *GithubSourceFinder) Find(_ *download.Client) ([]assets.Asset, error) {
+func (f *GithubSourceFinder) Find(_ download.ClientContract) ([]assets.Asset, error) {
 	name := fmt.Sprintf("%s.tar.gz", f.Tool)
 	asset := assets.Asset{
 		Name:        name,

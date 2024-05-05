@@ -28,7 +28,7 @@ var ErrNoUpgrade = errors.New("requested release is not more recent than current
 
 func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error) {
 	if f.Prerelease && f.Tag == "latest" {
-		tag, err := f.getLatestTag(client)
+		tag, err := f.GetLatestTag(client)
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 	// accumulate all assets from the json into a slice
 	assets := make([]Asset, 0, len(release.Assets))
 	for _, a := range release.Assets {
-		assets = append(assets, Asset{Name: a.Name, DownloadURL: a.URL})
+		assets = append(assets, Asset{Name: a.Name, DownloadURL: a.DownloadURL})
 	}
 
 	return assets, nil
@@ -130,7 +130,7 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 				// we have a winner
 				assets := make([]Asset, 0, len(r.Assets))
 				for _, a := range r.Assets {
-					assets = append(assets, Asset{Name: a.Name, DownloadURL: a.URL})
+					assets = append(assets, Asset{Name: a.Name, DownloadURL: a.DownloadURL})
 				}
 				return assets, nil
 			}
@@ -149,7 +149,7 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 }
 
 // finds the latest pre-release and returns the tag
-func (f *GithubAssetFinder) getLatestTag(client download.ClientContract) (string, error) {
+func (f *GithubAssetFinder) GetLatestTag(client download.ClientContract) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", f.Repo)
 	resp, err := client.GetJSON(url)
 	if err != nil {
