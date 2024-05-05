@@ -1,73 +1,107 @@
 package home_test
 
 import (
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
+	"os/user"
 
-	"github.com/permafrost-dev/eget/lib/home"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	. "github.com/permafrost-dev/eget/lib/home"
 )
 
-func TestHome(t *testing.T) {
-	expectedHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatalf("getting user home dir for test setup failed: %v", err)
-	}
+var _ = Describe("lib/home > PathExpander", func() {
+	var (
+		pathExpander *PathExpander
+	)
 
-	homeDir, err := home.Home()
-	if err != nil {
-		t.Errorf("Home() error = %v, wantErr = false", err)
-		return
-	}
-	if homeDir != expectedHomeDir {
-		t.Errorf("Home() = %v, want %v", homeDir, expectedHomeDir)
-	}
-}
+	BeforeEach(func() {
+		pathExpander = NewPathExpander()
+	})
 
-func TestExpand(t *testing.T) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatalf("getting user home dir for test setup failed: %v", err)
-	}
+	Describe("NewPathExpander", func() {
+		Context("when no arguments are provided", func() {
+			It("should return a PathExpander with an empty homePath", func() {
+				Expect(pathExpander.GetHomePath()).To(BeEmpty())
+			})
 
-	tests := []struct {
-		name    string
-		path    string
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "With tilde",
-			path:    "~/test",
-			want:    filepath.Join(homeDir, "test"),
-			wantErr: false,
-		},
-		{
-			name:    "Without tilde",
-			path:    "/test",
-			want:    "/test",
-			wantErr: false,
-		},
-		// This test assumes running as a non-root user; might need adjustments based on test environment
-		{
-			name:    "Tilde with username",
-			path:    "~nonexistentuser/test",
-			want:    "",
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := home.Expand(tt.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Expand() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Expand() = %v, want %v", got, tt.want)
-			}
+			It("should create a PathExpander with the provided homePath", func() {
+				pathExpander = NewPathExpander("/test/path")
+				Expect(pathExpander.GetHomePath()).To(Equal("/test/path"))
+			})
 		})
-	}
-}
+	})
+
+	Describe("SetHomePath", func() {
+		It("should set the home path correctly", func() {
+			testPath := "/test/path"
+			pathExpander.SetHomePath(testPath)
+			Expect(pathExpander.GetHomePath()).To(Equal(testPath))
+		})
+	})
+
+	Describe("HomeDirectory", func() {
+		Context("when homePath is set", func() {
+			It("returns the set homePath without error", func() {
+				testPath := "/custom/home"
+				pathExpander.SetHomePath(testPath)
+				homeDir, err := pathExpander.HomeDirectory()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(homeDir).To(Equal(testPath))
+			})
+		})
+
+		Context("when homePath is not set", func() {
+			It("returns the current user's home directory", func() {
+				currentUser, err := user.Current()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(currentUser.HomeDir).NotTo(BeEmpty())
+
+				homeDir, err := pathExpander.HomeDirectory()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(homeDir).To(Equal(currentUser.HomeDir))
+			})
+		})
+	})
+
+	Describe("Expand", func() {
+		Context("when path does not start with ~", func() {
+			It("returns the same path without error", func() {
+				testPath := "/some/path"
+				expandedPath, err := pathExpander.Expand(testPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(expandedPath).To(Equal(testPath))
+			})
+		})
+
+		Context("when path starts with ~ and homePath is set", func() {
+			It("replaces ~ with the home directory", func() {
+				t := GinkgoT()
+				homeDir := t.TempDir()
+				// Expect(err).NotTo(HaveOccurred())
+
+				testPath := "~/some/path"
+				expectedPath := homeDir + "/some/path"
+
+				pathExpander.SetHomePath(homeDir)
+				expandedPath, err := pathExpander.Expand(testPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(expandedPath).To(Equal(expectedPath))
+			})
+		})
+
+		Context("when path starts with ~ and homePath is unset", func() {
+			It("replaces ~ with the home directory", func() {
+				currentUser, err := user.Current()
+				homeDir := currentUser.HomeDir
+				// Expect(err).NotTo(HaveOccurred())
+
+				testPath := "~/some/path"
+				expectedPath := homeDir + "/some/path"
+
+				pathExpander.SetHomePath("")
+				expandedPath, err := pathExpander.Expand(testPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(expandedPath).To(Equal(expectedPath))
+			})
+		})
+	})
+})
