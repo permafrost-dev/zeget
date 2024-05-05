@@ -5,8 +5,12 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
-    - './**/*_test.go'
+    - './*.yaml'
+    - './*.yml'
     - '*.md'
+    - 'tools/**'
+    - LICENSE
+    
   pull_request:
 
 jobs:
