@@ -6,20 +6,20 @@ import (
 	"net/http"
 )
 
-type GithubError struct {
+type Error struct {
 	Code   int
 	Status string
 	Body   []byte
 	URL    string
 }
 
-type GithubErrorResponse struct {
+type ErrorResponse struct {
 	Message string `json:"message"`
 	Doc     string `json:"documentation_url"`
 }
 
-func (ge *GithubError) Error() string {
-	var msg GithubErrorResponse
+func (ge *Error) Error() string {
+	var msg ErrorResponse
 	json.Unmarshal(ge.Body, &msg)
 
 	if ge.Code == http.StatusForbidden {

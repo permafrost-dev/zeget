@@ -52,7 +52,7 @@ func (f *GithubAssetFinder) Find(client *download.Client) ([]Asset, error) {
 		if strings.HasPrefix(f.Tag, "tags/") && resp.StatusCode == http.StatusNotFound {
 			return f.FindMatch(client)
 		}
-		return nil, &github.GithubError{
+		return nil, &github.Error{
 			Status: resp.Status,
 			Code:   resp.StatusCode,
 			Body:   body,
@@ -102,7 +102,7 @@ func (f *GithubAssetFinder) FindMatch(client *download.Client) ([]Asset, error) 
 			if err != nil {
 				return nil, err
 			}
-			return nil, &github.GithubError{
+			return nil, &github.Error{
 				Status: resp.Status,
 				Code:   resp.StatusCode,
 				Body:   body,

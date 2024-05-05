@@ -10,12 +10,12 @@ import (
 func TestGithubError_Error(t *testing.T) {
 	tests := []struct {
 		name        string
-		githubError GithubError
+		githubError Error
 		want        string
 	}{
 		{
 			name: "Forbidden error with message",
-			githubError: GithubError{
+			githubError: Error{
 				Code:   http.StatusForbidden,
 				Status: "403 Forbidden",
 				Body:   []byte(`{"message":"rate limit exceeded","documentation_url":"https://developer.github.com/v3/#rate-limiting"}`),
@@ -25,7 +25,7 @@ func TestGithubError_Error(t *testing.T) {
 		},
 		{
 			name: "Other error without specific message",
-			githubError: GithubError{
+			githubError: Error{
 				Code:   http.StatusNotFound,
 				Status: "404 Not Found",
 				Body:   []byte(`{"message":"Not Found","documentation_url":"https://developer.github.com/v3"}`),
