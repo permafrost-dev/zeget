@@ -17,8 +17,10 @@ import (
 	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/data"
 	"github.com/permafrost-dev/eget/lib/download"
+	. "github.com/permafrost-dev/eget/lib/extraction"
 	"github.com/permafrost-dev/eget/lib/finders"
 	. "github.com/permafrost-dev/eget/lib/globals"
+	. "github.com/permafrost-dev/eget/lib/utilities"
 	"github.com/permafrost-dev/eget/lib/verifiers"
 )
 

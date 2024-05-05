@@ -1,6 +1,10 @@
-package app
+package extraction
 
-import "io/fs"
+import (
+	"io/fs"
+
+	"github.com/permafrost-dev/eget/lib/utilities"
+)
 
 // An ExtractedFile contains the data, name, and permissions of a file in the archive.
 type ExtractedFile struct {
@@ -13,7 +17,7 @@ type ExtractedFile struct {
 
 // Mode returns the filemode of the extracted file.
 func (e ExtractedFile) Mode() fs.FileMode {
-	return ModeFrom(e.Name, e.mode)
+	return utilities.ModeFrom(e.Name, e.mode)
 }
 
 // String returns the archive name of this extracted file

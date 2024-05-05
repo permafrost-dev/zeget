@@ -1,4 +1,4 @@
-package app
+package extraction
 
 import (
 	"bufio"
@@ -15,6 +15,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/archives"
 	"github.com/permafrost-dev/eget/lib/files"
 	"github.com/permafrost-dev/eget/lib/targetfile"
+	"github.com/permafrost-dev/eget/lib/utilities"
 	"github.com/ulikunitz/xz"
 )
 
@@ -157,7 +158,7 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 			continue
 		}
 
-		name := GetRename(f.Name, f.Name)
+		name := utilities.GetRename(f.Name, f.Name)
 
 		fdata, err := ar.ReadAll()
 		if err != nil {
@@ -167,7 +168,7 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 		var extract func(to string) error
 
 		extract = func(to string) error {
-			tf := targetfile.GetTargetFile(to, ModeFrom(name, f.Mode), true)
+			tf := targetfile.GetTargetFile(to, utilities.ModeFrom(name, f.Mode), true)
 
 			if tf.Err != nil {
 				return fmt.Errorf("extract: %w", err)
@@ -279,7 +280,7 @@ type SingleFileExtractor struct {
 }
 
 func (sf *SingleFileExtractor) Extract(data []byte, _ bool) (ExtractedFile, []ExtractedFile, error) {
-	name := GetRename(sf.Name, sf.Rename)
+	name := utilities.GetRename(sf.Name, sf.Rename)
 	return ExtractedFile{
 		Name:        name,
 		ArchiveName: sf.Name,
@@ -296,7 +297,7 @@ func (sf *SingleFileExtractor) Extract(data []byte, _ bool) (ExtractedFile, []Ex
 				return err
 			}
 
-			tf := targetfile.GetTargetFile(to, ModeFrom(name, 0666), true)
+			tf := targetfile.GetTargetFile(to, utilities.ModeFrom(name, 0666), true)
 			return tf.Write(decdata, true)
 		},
 	}, nil, nil

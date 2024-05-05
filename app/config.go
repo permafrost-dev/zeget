@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/permafrost-dev/eget/lib/globals"
 	"github.com/permafrost-dev/eget/lib/home"
+	"github.com/permafrost-dev/eget/lib/utilities"
 )
 
 type ConfigGlobal struct {
@@ -122,7 +123,7 @@ func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (
 	)
 
 	for _, filename := range filenames {
-		if !IsLocalFile(filename) {
+		if !utilities.IsLocalFile(filename) {
 			continue
 		}
 		if cfg, err = LoadConfigurationFile(filename); err == nil {
@@ -165,24 +166,24 @@ func (app *Application) initializeConfig() {
 	delete(config.Repositories, "global")
 
 	// set default global values
-	config.Global.All = SetIf(!config.Meta.MetaData.IsDefined("global", "system"), config.Global.All, false)
-	config.Global.GithubToken = SetIf(!config.Meta.MetaData.IsDefined("global", "github_token"), config.Global.GithubToken, "")
-	config.Global.Quiet = SetIf(!config.Meta.MetaData.IsDefined("global", "quiet"), config.Global.Quiet, false)
-	config.Global.DownloadOnly = SetIf(!config.Meta.MetaData.IsDefined("global", "download_only"), config.Global.DownloadOnly, false)
-	config.Global.ShowHash = SetIf(!config.Meta.MetaData.IsDefined("global", "show_hash"), config.Global.ShowHash, false)
-	config.Global.UpgradeOnly = SetIf(!config.Meta.MetaData.IsDefined("global", "upgrade_only"), config.Global.UpgradeOnly, false)
-	config.Global.Target = SetIf(!config.Meta.MetaData.IsDefined("global", "target"), config.Global.Target, GetCurrentDirectory())
+	config.Global.All = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "system"), config.Global.All, false)
+	config.Global.GithubToken = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "github_token"), config.Global.GithubToken, "")
+	config.Global.Quiet = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "quiet"), config.Global.Quiet, false)
+	config.Global.DownloadOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "download_only"), config.Global.DownloadOnly, false)
+	config.Global.ShowHash = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "show_hash"), config.Global.ShowHash, false)
+	config.Global.UpgradeOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "upgrade_only"), config.Global.UpgradeOnly, false)
+	config.Global.Target = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "target"), config.Global.Target, utilities.GetCurrentDirectory())
 
 	// set default repository values
 	for name, repo := range config.Repositories {
-		repo.All = SetIf(!config.Meta.MetaData.IsDefined(name, "all"), repo.All, config.Global.All)
-		repo.AssetFilters = SetIf(!config.Meta.MetaData.IsDefined(name, "asset_filters"), repo.AssetFilters, []string{})
-		repo.DownloadOnly = SetIf(!config.Meta.MetaData.IsDefined(name, "download_only"), repo.DownloadOnly, config.Global.DownloadOnly)
-		repo.Quiet = SetIf(!config.Meta.MetaData.IsDefined(name, "quiet"), repo.Quiet, config.Global.Quiet)
-		repo.ShowHash = SetIf(!config.Meta.MetaData.IsDefined(name, "show_hash"), repo.ShowHash, config.Global.ShowHash)
-		repo.Target = SetIf(!config.Meta.MetaData.IsDefined(name, "target"), repo.Target, config.Global.Target)
-		repo.UpgradeOnly = SetIf(!config.Meta.MetaData.IsDefined(name, "upgrade_only"), repo.UpgradeOnly, config.Global.UpgradeOnly)
-		repo.Source = SetIf(!config.Meta.MetaData.IsDefined(name, "download_source"), repo.Source, config.Global.Source)
+		repo.All = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "all"), repo.All, config.Global.All)
+		repo.AssetFilters = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "asset_filters"), repo.AssetFilters, []string{})
+		repo.DownloadOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "download_only"), repo.DownloadOnly, config.Global.DownloadOnly)
+		repo.Quiet = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "quiet"), repo.Quiet, config.Global.Quiet)
+		repo.ShowHash = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "show_hash"), repo.ShowHash, config.Global.ShowHash)
+		repo.Target = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "target"), repo.Target, config.Global.Target)
+		repo.UpgradeOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "upgrade_only"), repo.UpgradeOnly, config.Global.UpgradeOnly)
+		repo.Source = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "download_source"), repo.Source, config.Global.Source)
 
 		config.Repositories[name] = repo
 	}
