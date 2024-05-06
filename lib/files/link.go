@@ -1,25 +1,34 @@
 package files
 
 import (
-	"os"
 	"path/filepath"
+
+	"github.com/twpayne/go-vfs/v5"
 )
 
 type Link struct {
 	Newname string
 	Oldname string
 	Sym     bool
+	Fs      vfs.FS
+	Cleanup func()
 }
 
-func (l Link) Write() error {
-	// remove file if it exists already
-	os.Remove(l.Newname)
-	// make parent directories if necessary
-	os.MkdirAll(filepath.Dir(l.Newname), 0755)
+func NewLink(oldname, newname string) *Link {
+	return &Link{
+		Oldname: oldname,
+		Newname: newname,
+		Sym:     true,
+		Fs:      vfs.OSFS,
+	}
+}
 
-	if l.Sym {
-		return os.Symlink(l.Oldname, l.Newname)
+func (lnk *Link) Write() error {
+	if _, err := lnk.Fs.Stat(lnk.Newname); err == nil {
+		lnk.Fs.Remove(lnk.Newname)
 	}
 
-	return os.Link(l.Oldname, l.Newname)
+	lnk.Fs.Mkdir(filepath.Dir(lnk.Newname), 0755)
+
+	return lnk.Fs.Symlink(lnk.Oldname, lnk.Newname)
 }

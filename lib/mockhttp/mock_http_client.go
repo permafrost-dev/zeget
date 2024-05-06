@@ -10,6 +10,18 @@ import (
 	pb "github.com/schollz/progressbar/v3"
 )
 
+/*
+  - * *
+    // basic usage example (in some_file_test.go):
+
+    client = mockhttp.NewMockHTTPClient()
+
+    client.DoFunc = func(req *http.Request) (*http.Response, error) {
+    //
+    }
+
+    client.AddJSONResponse("https://api.github.com/repos/testRepo/releases/v1.0.0", `{"tag_name": "v1.0.0", "prerelease": false, "assets": [{"name": "exampleTool.tar.gz", "browser_download_url": "https://github.com/example/repo/tarball/v1.0.0/exampleTool.tar.gz"}], "created_at": "2020-01-01T00:00:00Z"}`, 200)
+*/
 type RequestData struct {
 	Method string
 	URL    string
