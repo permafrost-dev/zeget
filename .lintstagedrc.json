@@ -1,7 +1,10 @@
 {
-    "*.{html,json,css,scss,gql}": ["bunx prettier --config ./prettier.config.cjs --write"],
-    "*.{js,ts,jsx,tsx,cjs,mjs}": ["bunx prettier --config ./prettier.config.cjs --write"],
-    "*.{yaml,yml}": ["bunx prettier --config ./prettier.config.cjs --tab-width 2 --write"],
-    "*.go": ["gofmt -w", "golangci-lint run -c ./.golangci.yaml --new-from-rev $(git rev-parse HEAD)"],
+    "*.{html,json,css,scss,gql,js,ts,jsx,tsx,cjs,mjs}": [
+        "bunx prettier --config ./prettier.config.cjs --write"
+    ],
+    "*.{yaml,yml}": [
+        "bunx prettier --config ./prettier.config.cjs --tab-width 2 --write"
+    ],
+    "*.go": ["gofmt -w"],
     "*.md": ["bunx markdownlint-cli2 --fix"]
 }

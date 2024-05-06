@@ -6,15 +6,11 @@ const overrides = [
         },
     },
     {
-        files: 'tsconfig.json',
+        files: '*.json',
         options: {
             parser: 'json',
-        },
-    },
-    {
-        files: '.madgerc',
-        options: {
-            parser: 'json',
+            tabWidth: 4,
+            printWidth: 80,
         },
     },
 ];

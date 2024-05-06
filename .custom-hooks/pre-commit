@@ -3,20 +3,6 @@
 PROJECT_BASE_PATH=$(git rev-parse --show-toplevel)
 LAST_COMMIT=$(git rev-parse HEAD)
 
-# GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
-
-# if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
-#     GOLINT_BIN=$(which golangci-lint)
-
-#     if [ -n "$GOLINT_BIN" ]; then
-#         LAST_COMMIT=$(git rev-parse HEAD)
-
-#         echo "[pre-commit] $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev $LAST_COMMIT"
-
-#         $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
-#     fi
-# fi
-
 
 bunx_bin=$(which bunx)
 npx_bin=$(which npx)
@@ -38,6 +24,20 @@ fi
 echo "[pre-commit] $PKG_RUNNER lint-staged"
 
 export LAST_COMMIT="$LAST_COMMIT"
-export PKG_RUNNER="$PKG_RUNNER"
 
-LAST_COMMIT="$LAST_COMMIT" PKG_RUNNER="$PKG_RUNNER" $PKG_RUNNER -y lint-staged
+npx -y lint-staged
+
+
+GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
+
+if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
+    GOLINT_BIN=$(which golangci-lint)
+
+    if [ -n "$GOLINT_BIN" ]; then
+        LAST_COMMIT=$(git rev-parse HEAD)
+
+        echo "[pre-commit] $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev $LAST_COMMIT"
+
+        $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
+    fi
+fi
