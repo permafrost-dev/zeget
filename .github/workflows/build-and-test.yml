@@ -80,15 +80,13 @@ jobs:
         run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: generate ginkgo bootstrap files
-        run: /bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash
-        # cd app && ginkgo bootstrap; cd ..
+        run: task ginkgo-bootstrap
           
       - name: Run unit tests with coverage
         working-directory: ${{ github.workspace }}
         env:
           GINKGO_PRESERVE_CACHE: "true" 
         run: go test -coverprofile ./coverprofile.out -v ./lib/** ./app
-        # ginkgo -cover -r -v --junit-report ginkgo.xml
 
       - name: Upload coverage reports to Codecov
         if: ${{success()}}

@@ -4,6 +4,7 @@ version: '3'
 dotenv: ['.env', '.env.local']
 
 vars:
+  NPM_EXEC: 'bunx'
   APP_VERSION_FILE: './lib/version/app-version.go'
   ENTRY_FILENAME: './main.go'
   BUILD_OUTPUT_DIR: './dist'
@@ -12,7 +13,7 @@ vars:
   GIT_COMMIT:
     sh: git log -n 1 --format=%h
   GOLANGCILINT_CMD_DIRS:
-    sh: find . -name "*.go" -printf '%h\n' | sort -u | egrep -v '^.$' | grep -v './tools' | sd '\n' ' ' | awk -F'|' '{ print $1 }'
+    sh: find . -name "*.go" -printf '%h\n' | sort -u | egrep -v '^.$' | egrep -v 'tools/|test/' | tr '\n' ' ' | awk -F'|' '{ print $1 }'
 
 tasks:
 
@@ -24,22 +25,20 @@ tasks:
 
   test:
     desc: Runs tests
-    dir: .
     cmds:
       - cd app && go test -cover -v . && cd ..
       - cd lib && go test -cover -v ./** && cd ..
 
-  test-coverage:
+  coverage:
     desc: Runs tests with coverage profiling
-    dir: .
     cmds:
-      - cd app && go test -cover -coverprofile=../coverage-app.out -v . && cd ..
-      - cd lib && go test -cover -coverprofile=../coverage-lib.out -v ./** && cd ..
+      - go test -coverprofile coverprofile.out -v ./lib/** ./app
 
   fmt:
-    desc: Formats the code
+    desc: Formats source code & documentation
     cmds:
       - gofmt -s -w .
+      - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./*.md'
 
   build:
     desc: Builds binary
@@ -72,6 +71,12 @@ tasks:
       - task build-docs
 
   clean:
+    desc: Removes all artifacts
+    cmds:
+      - task: clean-coverage
+      - task: clean-build
+
+  clean-build:
     desc: Cleans up build artifacts
     preconditions:
       - test -d {{.BUILD_OUTPUT_DIR}}
@@ -79,6 +84,7 @@ tasks:
     cmds:
       - rm -f {{.DIST_TARGET_FILE}}
       - rm test/eget.1 || true 
+      # - find . -wholename "./test/*" -print | egrep -v '(eget\.toml|test_eget\.go)' | xargs rm "%s" || true 
       - rm test/{fd,micro,nvim,pandoc,rg.exe} || true
 
   lint:
@@ -103,6 +109,28 @@ tasks:
       - mkdir -p {{.BUILD_OUTPUT_DIR}}
     status:
       - test -d {{.BUILD_OUTPUT_DIR}}
+
+  ginkgo-clean:
+    desc: Removes all gingko-generated bootstrap files
+    label: ginkgo
+    ignore_error: true
+    cmds:
+      - sh -c '/bin/ls -1 lib | xargs printf "cd lib/%s && rm ./*_suite_test.go; cd ../..;\n " | bash'
+
+  ginkgo-bootstrap:
+    desc: Bootstraps ginkgo suites
+    label: ginkgo
+    ignore_error: true
+    generates:
+      - ./lib/**/*_suite_test.go
+    cmds:
+      - sh -c '/bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash'
+
+  # remove all coverageprofile.out files:
+  clean-coverage:
+    desc: Removes all coverageprofile.out files
+    cmds:
+      - find . -name 'coverage*.out' -delete
 
   autobuild:
     interactive: true
