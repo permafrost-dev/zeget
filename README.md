@@ -50,23 +50,23 @@ Before you can get anything, you have to get Eget. If you already have Eget and 
 ## Quick-install script
 
 ```sh
-curl -o eget.sh https://permafrost-dev.github.io/eget.sh
-shasum -a 256 eget.sh # verify with hash below
-bash eget.sh
+curl -o install.sh https://raw.githubusercontent.com/permafrost-dev/eget/main/scripts/install.sh
+sha256sum install.sh # verify with hash below
+bash install.sh
 ```
 
 Or alternatively (less secure):
 
 ```sh
-curl https://permafrost-dev.github.io/eget.sh | sh
+curl https://raw.githubusercontent.com/permafrost-dev/eget/main/scripts/install.sh | sh
 ```
 
 You can then place the downloaded binary in a location on your `$PATH` such as `/usr/local/bin`.
 
-To verify the script, use `shasum -a 256 eget.sh` after downloading; the sha256 checksum is:
+To verify the script, use `sha256sum install.sh` after downloading; the sha256 checksum is:
 
 ```checksum
-0e64b8a3c13f531da005096cc364ac77835bda54276fedef6c62f3dbdc1ee919
+7ab91ff8a3d0788d92ec96212aadbb3019bc56f514b03debda701cdb465eb970  install.sh
 ````
 
 One of the reasons to use eget is to avoid running curl into bash, but unfortunately you can't eget eget until you have eget.
