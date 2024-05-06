@@ -20,13 +20,13 @@ LAST_COMMIT=$(git rev-parse HEAD)
 
 bunx_bin=$(which bunx)
 npx_bin=$(which npx)
-PKG_RUNNER=""
+PKG_RUNNER="$npx_bin"
 
-if [ -n "$bunx_bin" ]; then
-    PKG_RUNNER="$bunx_bin"
-elif [ -n "$npx_bin" ]; then
-    PKG_RUNNER="$npx_bin"
-fi
+# if [ -n "$bunx_bin" ]; then
+#     PKG_RUNNER="$bunx_bin"
+# elif [ -n "$npx_bin" ]; then
+#     PKG_RUNNER="$npx_bin"
+# fi
 
 cd "$PROJECT_BASE_PATH" || exit 0
 
@@ -40,4 +40,4 @@ echo "[pre-commit] $PKG_RUNNER lint-staged"
 export LAST_COMMIT="$LAST_COMMIT"
 export PKG_RUNNER="$PKG_RUNNER"
 
-LAST_COMMIT="$LAST_COMMIT" PKG_RUNNER="$PKG_RUNNER" $PKG_RUNNER --allow-env lint-staged
+LAST_COMMIT="$LAST_COMMIT" PKG_RUNNER="$PKG_RUNNER" $PKG_RUNNER -y lint-staged

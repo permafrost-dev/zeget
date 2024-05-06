@@ -5,7 +5,7 @@ dotenv: ['.env', '.env.local']
 
 vars:
   NPM_EXEC: 'bunx'
-  APP_VERSION_FILE: './lib/version/app-version.go'
+  APP_VERSION_FILE: './lib/globals/version.go'
   ENTRY_FILENAME: './main.go'
   BUILD_OUTPUT_DIR: './dist'
   BINARY_FILENAME: 'eget'
@@ -26,8 +26,7 @@ tasks:
   test:
     desc: Runs tests
     cmds:
-      - cd app && go test -cover -v . && cd ..
-      - cd lib && go test -cover -v ./** && cd ..
+      - go test -coverprofile coverprofile.out -v ./app ./lib/**
 
   coverage:
     desc: Runs tests with coverage profiling
@@ -39,6 +38,7 @@ tasks:
     cmds:
       - gofmt -s -w .
       - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./*.md'
+      - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./man/*.md'
 
   build:
     desc: Builds binary
@@ -84,7 +84,6 @@ tasks:
     cmds:
       - rm -f {{.DIST_TARGET_FILE}}
       - rm test/eget.1 || true 
-      # - find . -wholename "./test/*" -print | egrep -v '(eget\.toml|test_eget\.go)' | xargs rm "%s" || true 
       - rm test/{fd,micro,nvim,pandoc,rg.exe} || true
 
   lint:
@@ -99,7 +98,7 @@ tasks:
 
   update-version-file:
     cmds:
-      - printf "package version\n\nvar Version = \"$(go run tools/build-version.go)+src\"" > {{.APP_VERSION_FILE}}
+      - printf "package globals\n\nvar Version = \"$(go run tools/build-version.go)+src\"" > {{.APP_VERSION_FILE}}
 
   prepare-dist-folder:
     desc: Prepares dist folder

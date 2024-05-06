@@ -1,0 +1,10 @@
+node_modules/*
+dist/*
+build/*
+dist-test*
+*.yml
+*.yaml
+*.ignore
+tests/TestData/*
+*.snap
+tests/__snapshots/

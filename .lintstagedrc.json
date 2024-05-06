@@ -1,16 +1,6 @@
 {
-    "*.go": [
-        "gofmt -w",
-        "golangci-lint run -c ./.golangci.yaml --new-from-rev $(git rev-parse HEAD)"
-    ],
-    "*.{js,ts,jsx,tsx,cjs,mjs}": [
-        "$PKG_RUNNER prettier --config ./frontend/prettier.config.cjs --write",
-        "$PKG_RUNNER eslint --config ./frontend/.eslintrc.cjs --ext ts,js,tsx,jsx --fix"
-    ],
-    "*.{html,md,json,css,scss,gql}": [
-        "$PKG_RUNNER prettier --config ./frontend/prettier.config.cjs --write"
-    ],
-    "*.{yaml,yml}": [
-        "$PKG_RUNNER prettier --config ./frontend/prettier.config.cjs --tab-width 2 --write"
-    ]
+    "*.go": ["gofmt -w", "golangci-lint run -c ./.golangci.yaml --new-from-rev $(git rev-parse HEAD)"],
+    "*.{js,ts,jsx,tsx,cjs,mjs}": ["bunx prettier --config ./prettier.config.cjs --write"],
+    "*.{html,md,json,css,scss,gql}": ["bunx prettier --config ./prettier.config.cjs --write"],
+    "*.{yaml,yml}": ["bunx prettier --config ./prettier.config.cjs --tab-width 2 --write"]
 }
