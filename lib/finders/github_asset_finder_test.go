@@ -53,7 +53,6 @@ var _ = Describe("GithubAssetFinder", func() {
 
 		Context("with a tag that does not exist", func() {
 			It("should return an error", func() {
-				// dlclient := client.(download.ClientContract)
 				assetFinder.Tag = "nonexistent"
 				_, err := assetFinder.Find(client)
 				Expect(err).To(HaveOccurred())
