@@ -24,14 +24,12 @@ require (
 )
 
 require (
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/jarcoal/httpmock v1.3.1
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/onsi/ginkgo/v2 v2.17.2
 	github.com/onsi/gomega v1.33.1
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
 )
