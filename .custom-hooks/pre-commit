@@ -1,18 +1,43 @@
 #!/usr/bin/env sh
 
 PROJECT_BASE_PATH=$(git rev-parse --show-toplevel)
+LAST_COMMIT=$(git rev-parse HEAD)
+
+# GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
+
+# if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
+#     GOLINT_BIN=$(which golangci-lint)
+
+#     if [ -n "$GOLINT_BIN" ]; then
+#         LAST_COMMIT=$(git rev-parse HEAD)
+
+#         echo "[pre-commit] $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev $LAST_COMMIT"
+
+#         $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
+#     fi
+# fi
+
+
+bunx_bin=$(which bunx)
+npx_bin=$(which npx)
+PKG_RUNNER=""
+
+if [ -n "$bunx_bin" ]; then
+    PKG_RUNNER="$bunx_bin"
+elif [ -n "$npx_bin" ]; then
+    PKG_RUNNER="$npx_bin"
+fi
+
 cd "$PROJECT_BASE_PATH" || exit 0
 
-GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
-
-if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
-    GOLINT_BIN=$(which golangci-lint)
-
-    if [ -n "$GOLINT_BIN" ]; then
-        LAST_COMMIT=$(git rev-parse HEAD)
-
-        echo "[pre-commit] $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev $LAST_COMMIT"
-
-        $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
-    fi
+if [ ! -n "$PKG_RUNNER" ]; then
+    echo "[pre-commit] No PKG_RUNNER (npx/bunx) found, skipping lint-staged run."
+    exit 0
 fi
+
+echo "[pre-commit] $PKG_RUNNER lint-staged"
+
+export LAST_COMMIT="$LAST_COMMIT"
+export PKG_RUNNER="$PKG_RUNNER"
+
+LAST_COMMIT="$LAST_COMMIT" PKG_RUNNER="$PKG_RUNNER" $PKG_RUNNER --allow-env lint-staged
