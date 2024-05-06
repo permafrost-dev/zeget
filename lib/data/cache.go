@@ -16,6 +16,7 @@ import (
 type Cache struct {
 	Filename string
 	Data     ApplicationData
+	Debug    bool
 	mutex    sync.Mutex
 }
 
@@ -25,6 +26,7 @@ func NewCache(filename string) *Cache {
 	return &Cache{
 		Filename: filename,
 		Data:     ApplicationData{RateLimit: rateLimit, Repositories: repoEntries},
+		Debug:    false,
 	}
 }
 
@@ -80,7 +82,6 @@ func (c *Cache) SetRateLimit(limit int, remaining int, reset time.Time) {
 }
 
 func (c *Cache) AddRepository(name, target string, filters []string, expiresAt time.Time) (*RepositoryCacheEntry, bool) {
-
 	if !utilities.IsValidRepositoryReference(name) {
 		return &RepositoryCacheEntry{}, false
 	}
@@ -97,7 +98,9 @@ func (c *Cache) AddRepository(name, target string, filters []string, expiresAt t
 	c.Set(entry.Name, &entry)
 	c.SaveToFile()
 
-	fmt.Printf("Added repository %s, %v\n", name, entry)
+	if c.Debug {
+		fmt.Printf("Added repository %s, %v\n", name, entry)
+	}
 
 	return &entry, true
 }

@@ -21,8 +21,10 @@ import (
 	"github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/github"
 	. "github.com/permafrost-dev/eget/lib/globals"
+	"github.com/permafrost-dev/eget/lib/utilities"
 	. "github.com/permafrost-dev/eget/lib/utilities"
 	"github.com/permafrost-dev/eget/lib/verifiers"
+	"github.com/twpayne/go-vfs/v5"
 )
 
 type ApplicationOutputs struct {
@@ -40,6 +42,7 @@ type Application struct {
 	flagparser *flags.Parser
 	Config     *Config
 	Cache      data.Cache
+	Filesystem vfs.FS
 }
 
 func NewApplicationOutputs(stdout io.Writer, stderr io.Writer) *ApplicationOutputs {
@@ -64,10 +67,11 @@ func NewApplication(outputs *ApplicationOutputs) *Application {
 	}
 
 	result := &Application{
-		Opts:    Flags{},
-		Output:  nil,
-		Cache:   *data.NewCache("./eget.db.json"),
-		Outputs: outputs,
+		Opts:       Flags{},
+		Output:     nil,
+		Cache:      *data.NewCache("./eget.db.json"),
+		Outputs:    outputs,
+		Filesystem: vfs.OSFS,
 	}
 
 	result.initOutputs()
@@ -116,11 +120,14 @@ func (app *Application) Run() {
 	body := app.downloadAsset(assetWrapper.Asset) // download with progress bar and get the response body
 	app.VerifyChecksums(assetWrapper, body)
 
-	fmt.Printf("cache %v\n", app.Cache.Data)
+	if app.Cache.Debug {
+		fmt.Printf("cache %v\n", app.Cache.Data)
+	}
 
 	extractor, err := app.getExtractor(assetWrapper.Asset, tool)
 	FatalIf(err)
 
+	// 01
 	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
 	if err != nil && len(bins) == 0 {
 		Fatal(err)
@@ -296,23 +303,27 @@ func (app *Application) downloadAsset(asset *Asset) []byte {
 func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) verifiers.VerifyChecksumResult {
 	verifier, sumAsset, err := app.getVerifier(*wrapper.Asset, wrapper.Assets)
 
+	if verifier != nil && !utilities.SameImplementedInterface(verifier, verifiers.NoVerifier{}) {
+		app.write("› performing verification for %s...", wrapper.Asset.Name)
+	}
+
 	if err != nil {
 		app.writeLine("Checksum verification failed, could not create a verifier.")
 		return verifiers.VerifyChecksumFailedNoVerifier
 	}
 
 	if err = verifier.Verify(body); err != nil {
-		app.writeLine("Checksum verification failed, %v", err)
+		app.writeLine("failed, %v", err)
 		return verifiers.VerifyChecksumVerificationFailed
 	}
 
 	if app.Opts.Verify == "" && sumAsset != (Asset{}) {
-		app.writeLine("Checksum verified with %s", path.Base(sumAsset.Name))
+		app.writeLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
 	}
 
 	if app.Opts.Verify != "" {
-		app.writeLine("Checksum verified")
+		app.writeLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
 	}
 
@@ -416,7 +427,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 
 	for _, item := range assets {
 		if item.Name == asset.Name+".sha256sum" || item.Name == asset.Name+".sha256" {
-			app.writeLine("verify against %s", item)
+			app.writeLine("verification against %s (%s)", item.Name, item.DownloadURL)
 
 			verifier := verifiers.Sha256AssetVerifier{AssetURL: item.DownloadURL}
 			verifier.WithClient(app.DownloadClient())
@@ -429,7 +440,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 				return nil, item, fmt.Errorf("extract binary name from asset url: %s: %w", asset, err)
 			}
 			binaryName := path.Base(binaryURL.Path)
-			app.writeLine("verify against %s", item)
+			app.writeLine("› performing checksum verifications against %s (%s)", item.Name, item.DownloadURL)
 			return &verifiers.Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, Client: download.NewClient("")}, item, nil
 		}
 	}
@@ -462,10 +473,10 @@ func (app *Application) getExtractor(asset *Asset, tool string) (extractor Extra
 		if err != nil {
 			return nil, err
 		}
-		return NewExtractor(path.Base(asset.DownloadURL), tool, gc), nil
+		return NewExtractor(app.Filesystem, path.Base(asset.DownloadURL), tool, gc), nil
 	}
 
-	return NewExtractor(path.Base(asset.DownloadURL), tool, &BinaryChooser{Tool: tool}), nil
+	return NewExtractor(app.Filesystem, path.Base(asset.DownloadURL), tool, &BinaryChooser{Tool: tool}), nil
 }
 
 // Would really like generics to implement this...

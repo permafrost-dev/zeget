@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -242,4 +243,9 @@ func GetCurrentDirectory() string {
 	}
 
 	return dir
+}
+
+// check if two interfaces implement the same type
+func SameImplementedInterface(a, b interface{}) bool {
+	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }

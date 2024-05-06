@@ -4,6 +4,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/twpayne/go-vfs/v5"
 )
 
 // NewTargetFile returns a new TargetFile instance for the given file.
@@ -16,7 +18,7 @@ import (
 //   - result.File will be the given file
 //   - result.shouldClose will be false.
 //   - result.Filename will be nil.
-func NewTargetFile(file *os.File, filename string, shouldClose bool) *TargetFile {
+func NewTargetFile(fs vfs.FS, file *os.File, filename string, shouldClose bool) *TargetFile {
 	fn := &filename
 
 	if filename == "" || filename == "-" {
@@ -29,6 +31,7 @@ func NewTargetFile(file *os.File, filename string, shouldClose bool) *TargetFile
 		Filename:    fn,
 		ShouldClose: shouldClose,
 		Err:         nil,
+		Fs:          &fs,
 	}
 }
 
@@ -36,21 +39,21 @@ func NewTargetFile(file *os.File, filename string, shouldClose bool) *TargetFile
 // The file will be opened with the given mode; result.Cleanup() should be called to close the file.
 // If removeExisting is true, the existing file will be removed before creating a new one.
 // If the target directory does not exist, it will be created recursively with mode 0755.
-func GetTargetFile(filename string, mode fs.FileMode, removeExisting bool) (tf *TargetFile) {
+func GetTargetFile(fs vfs.FS, filename string, mode fs.FileMode, removeExisting bool) (tf *TargetFile) {
 	if filename == "-" {
-		return NewTargetFile(os.Stdout, filename, false)
+		return NewTargetFile(fs, os.Stdout, filename, false)
 	}
 
 	if removeExisting {
 		os.Remove(filename)
 	}
 
-	os.MkdirAll(filepath.Dir(filename), 0755)
+	fs.Mkdir(filepath.Dir(filename), 0755)
 
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	file, err := fs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
-		return NewTargetFile(nil, "", false).WithError(err)
+		return NewTargetFile(fs, nil, "", false).WithError(err)
 	}
 
-	return NewTargetFile(file, filename, true)
+	return NewTargetFile(fs, file, filename, true)
 }

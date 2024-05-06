@@ -5,13 +5,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"go/types"
 
+	"github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/download"
 )
 
 type Sha256Verifier struct {
 	Expected []byte
 	client   *download.Client
+	Asset    *assets.Asset
+	types.Type
 }
 
 func NewSha256Verifier(client *download.Client, expectedHex string) (*Sha256Verifier, error) {
@@ -23,6 +27,10 @@ func NewSha256Verifier(client *download.Client, expectedHex string) (*Sha256Veri
 		client:   client,
 		Expected: expected,
 	}, nil
+}
+
+func (s256 *Sha256Verifier) GetAsset() *assets.Asset {
+	return s256.Asset
 }
 
 func (s256 *Sha256Verifier) WithClient(client *download.Client) *Verifier {
@@ -41,4 +49,8 @@ func (s256 *Sha256Verifier) Verify(b []byte) error {
 		Expected: s256.Expected,
 		Got:      sum[:],
 	}
+}
+
+func (s256 *Sha256Verifier) String() string {
+	return fmt.Sprintf("sha256:%x", s256.Expected)
 }

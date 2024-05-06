@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"fmt"
-	"io"
+	"go/types"
 	"regexp"
 
+	"github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/download"
 )
 
@@ -15,6 +16,12 @@ type Sha256SumFileAssetVerifier struct {
 	Sha256SumAssetURL string
 	RealAssetURL      string
 	BinaryName        string
+	Asset             *assets.Asset
+	types.Type
+}
+
+func (s256 *Sha256SumFileAssetVerifier) GetAsset() *assets.Asset {
+	return s256.Asset
 }
 
 func (s256 *Sha256SumFileAssetVerifier) WithClient(client *download.Client) *Verifier {
@@ -33,22 +40,24 @@ func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {
 	defer resp1.Body.Close()
 
 	// follow the "redirect" in the JSON provided by "browser_download_url":
-	body, _ := io.ReadAll(resp1.Body)
-	urlpattern := regexp.MustCompile(`"(https://github.com/[\w-_]+/[\w-_]+/releases/download/.+)"`)
-	downloadMatch := urlpattern.FindStringSubmatch(string(body))
-	if downloadMatch == nil {
-		return fmt.Errorf("no download url found in %s", s256.Sha256SumAssetURL)
-	}
+	// body, _ := io.ReadAll(resp1.Body)
+	// fmt.Printf("body: %s\n", body)
 
-	s256.RealAssetURL = downloadMatch[1]
+	// urlpattern := regexp.MustCompile(`"(https://github.com/[\w-_]+/[\w-_]+/releases/.+)"`)
+	// downloadMatch := urlpattern.FindStringSubmatch(string(body))
+	// if downloadMatch == nil {
+	// 	return fmt.Errorf("no download url found in %s", s256.Sha256SumAssetURL)
+	// }
 
-	resp, err := s256.Client.GetText(s256.RealAssetURL)
-	if err != nil {
-		return err
-	}
+	// s256.RealAssetURL = s256.RealAssetURL // downloadMatch[1]
+
+	// resp, err := s256.Client.GetText(s256.RealAssetURL)
+	// if err != nil {
+	// 	return err
+	// }
 
 	expectedFound := false
-	scanner := bufio.NewScanner(resp.Body)
+	scanner := bufio.NewScanner(resp1.Body)
 	sha256sumLinePattern := regexp.MustCompile(fmt.Sprintf("(%x)\\s+([\\w_\\-\\.]+)", got)) //, s256.BinaryName
 	for scanner.Scan() {
 		line := scanner.Bytes()

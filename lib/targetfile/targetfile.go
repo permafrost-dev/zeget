@@ -3,6 +3,8 @@ package targetfile
 import (
 	"errors"
 	"os"
+
+	"github.com/twpayne/go-vfs/v5"
 )
 
 var ErrInvalidated = errors.New("target file has been invalidated")
@@ -12,6 +14,7 @@ type TargetFile struct {
 	Filename    *string
 	ShouldClose bool
 	Err         error
+	Fs          *vfs.FS
 }
 
 // Cleanup closes the file if it should be closed and sets the file to nil.

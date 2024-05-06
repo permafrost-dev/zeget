@@ -16,6 +16,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/files"
 	"github.com/permafrost-dev/eget/lib/targetfile"
 	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/twpayne/go-vfs/v5"
 	"github.com/ulikunitz/xz"
 )
 
@@ -31,7 +32,7 @@ type Extractor interface {
 // '.tar.bz2', '.tar', '.zip'. After these matches, if the file ends with
 // '.gz', '.bz2' it will be decompressed and copied. Other files will simply
 // be copied without any decompression or extraction.
-func NewExtractor(filename string, tool string, chooser Chooser) Extractor {
+func NewExtractor(fs vfs.FS, filename string, tool string, chooser Chooser) Extractor {
 	if tool == "" {
 		tool = filename
 	}
@@ -54,70 +55,37 @@ func NewExtractor(filename string, tool string, chooser Chooser) Extractor {
 
 	switch {
 	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
-		return &ArchiveExtractor{
-			File:       chooser,
-			Ar:         archives.NewTarArchive,
-			Decompress: gunzipper,
-		}
+		return NewArchiveExtractor(chooser, archives.NewTarArchive, gunzipper, fs)
+
 	case strings.HasSuffix(filename, ".tar.bz2"), strings.HasSuffix(filename, ".tbz"):
-		return &ArchiveExtractor{
-			File:       chooser,
-			Ar:         archives.NewTarArchive,
-			Decompress: b2unzipper,
-		}
+		return NewArchiveExtractor(chooser, archives.NewTarArchive, b2unzipper, fs)
+
 	case strings.HasSuffix(filename, ".tar.xz"), strings.HasSuffix(filename, ".txz"):
-		return &ArchiveExtractor{
-			File:       chooser,
-			Ar:         archives.NewTarArchive,
-			Decompress: xunzipper,
-		}
+		return NewArchiveExtractor(chooser, archives.NewTarArchive, xunzipper, fs)
+
 	case strings.HasSuffix(filename, ".tar.zst"):
-		return &ArchiveExtractor{
-			File:       chooser,
-			Ar:         archives.NewTarArchive,
-			Decompress: zstdunzipper,
-		}
+		return NewArchiveExtractor(chooser, archives.NewTarArchive, zstdunzipper, fs)
+
 	case strings.HasSuffix(filename, ".tar"):
-		return &ArchiveExtractor{
-			File:       chooser,
-			Ar:         archives.NewTarArchive,
-			Decompress: nounzipper,
-		}
+		return NewArchiveExtractor(chooser, archives.NewTarArchive, nounzipper, fs)
+
 	case strings.HasSuffix(filename, ".zip"):
-		return &ArchiveExtractor{
-			Ar:   archives.NewZipArchive,
-			File: chooser,
-		}
+		return NewArchiveExtractor(chooser, archives.NewZipArchive, nounzipper, fs)
+
 	case strings.HasSuffix(filename, ".gz"):
-		return &SingleFileExtractor{
-			Rename:     tool,
-			Name:       filename,
-			Decompress: gunzipper,
-		}
+		return NewSingleFileExtractor(tool, filename, gunzipper, fs)
+
 	case strings.HasSuffix(filename, ".bz2"):
-		return &SingleFileExtractor{
-			Rename:     tool,
-			Name:       filename,
-			Decompress: b2unzipper,
-		}
+		return NewSingleFileExtractor(tool, filename, b2unzipper, fs)
+
 	case strings.HasSuffix(filename, ".xz"):
-		return &SingleFileExtractor{
-			Rename:     tool,
-			Name:       filename,
-			Decompress: xunzipper,
-		}
+		return NewSingleFileExtractor(tool, filename, xunzipper, fs)
+
 	case strings.HasSuffix(filename, ".zst"):
-		return &SingleFileExtractor{
-			Rename:     tool,
-			Name:       filename,
-			Decompress: zstdunzipper,
-		}
+		return NewSingleFileExtractor(tool, filename, zstdunzipper, fs)
+
 	default:
-		return &SingleFileExtractor{
-			Rename:     tool,
-			Name:       filename,
-			Decompress: nounzipper,
-		}
+		return NewSingleFileExtractor(tool, filename, nounzipper, fs)
 	}
 }
 
@@ -125,6 +93,20 @@ type ArchiveExtractor struct {
 	File       Chooser
 	Ar         archives.ArchiveFunc
 	Decompress archives.DecompressFunc
+	Fs         vfs.FS
+}
+
+func NewArchiveExtractor(file Chooser, ar archives.ArchiveFunc, decompress archives.DecompressFunc, fs interface{}) *ArchiveExtractor {
+	if fs == nil {
+		fs = vfs.OSFS
+	}
+
+	return &ArchiveExtractor{
+		File:       file,
+		Ar:         ar,
+		Decompress: decompress,
+		Fs:         fs.(vfs.FS),
+	}
 }
 
 func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, []ExtractedFile, error) {
@@ -168,7 +150,7 @@ func (a *ArchiveExtractor) Extract(data []byte, multiple bool) (ExtractedFile, [
 		var extract func(to string) error
 
 		extract = func(to string) error {
-			tf := targetfile.GetTargetFile(to, utilities.ModeFrom(name, f.Mode), true)
+			tf := targetfile.GetTargetFile(a.Fs, to, utilities.ModeFrom(name, f.Mode), true)
 
 			if tf.Err != nil {
 				return fmt.Errorf("extract: %w", err)
@@ -232,7 +214,8 @@ func (a *ArchiveExtractor) handleDirs(f files.File, data []byte, dirs []string) 
 			}
 
 			if subf.Dir() {
-				os.MkdirAll(filepath.Join(to, subf.Name[len(f.Name):]), 0755)
+				// TODO implement MkdirAll
+				a.Fs.Mkdir(filepath.Join(to, subf.Name[len(f.Name):]), 0755)
 				continue
 			}
 
@@ -253,13 +236,14 @@ func (a *ArchiveExtractor) handleDirs(f files.File, data []byte, dirs []string) 
 			}
 			name := filepath.Join(to, subf.Name[len(f.Name):])
 
-			tf := targetfile.GetTargetFile(name, subf.Mode, true)
+			tf := targetfile.GetTargetFile(a.Fs, name, subf.Mode, true)
 			if err = tf.Write(fdata, true); err != nil {
 				return fmt.Errorf("extract: %w", err)
 			}
 		}
 
 		for _, l := range links {
+			l.Fs = a.Fs
 			if err := l.Write(); err != nil && err != os.ErrExist {
 				return fmt.Errorf("extract: %w", err)
 			}
@@ -277,10 +261,12 @@ type SingleFileExtractor struct {
 	Rename     string
 	Name       string
 	Decompress func(r io.Reader) (io.Reader, error)
+	Fs         vfs.FS
 }
 
 func (sf *SingleFileExtractor) Extract(data []byte, _ bool) (ExtractedFile, []ExtractedFile, error) {
-	name := utilities.GetRename(sf.Name, sf.Rename)
+	name := utilities.GetRename(sf.Rename, sf.Name)
+
 	return ExtractedFile{
 		Name:        name,
 		ArchiveName: sf.Name,
@@ -297,8 +283,17 @@ func (sf *SingleFileExtractor) Extract(data []byte, _ bool) (ExtractedFile, []Ex
 				return err
 			}
 
-			tf := targetfile.GetTargetFile(to, utilities.ModeFrom(name, 0666), true)
+			tf := targetfile.GetTargetFile(sf.Fs, to, utilities.ModeFrom(name, 0666), true)
 			return tf.Write(decdata, true)
 		},
 	}, nil, nil
+}
+
+func NewSingleFileExtractor(name string, rename string, decompress func(r io.Reader) (io.Reader, error), fs interface{}) *SingleFileExtractor {
+	return &SingleFileExtractor{
+		Name:       name,
+		Rename:     rename,
+		Decompress: decompress,
+		Fs:         fs.(vfs.FS),
+	}
 }
