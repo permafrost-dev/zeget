@@ -25,8 +25,15 @@ import (
 	"github.com/permafrost-dev/eget/lib/verifiers"
 )
 
+type ApplicationOutputs struct {
+	Stdout  io.Writer
+	Stderr  io.Writer
+	Discard io.Writer
+}
+
 type Application struct {
 	Output     io.Writer
+	Outputs    *ApplicationOutputs
 	Opts       Flags
 	cli        CliFlags
 	Args       []string
@@ -35,14 +42,35 @@ type Application struct {
 	Cache      data.Cache
 }
 
-func NewApplication() *Application {
-	result := &Application{
-		Opts:   Flags{},
-		Output: nil,
-		Cache:  *data.NewCache("./eget.db.json"),
+func NewApplicationOutputs(stdout io.Writer, stderr io.Writer) *ApplicationOutputs {
+	if stdout == nil {
+		stdout = os.Stdout
 	}
 
-	result.initOutputWriter()
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+
+	return &ApplicationOutputs{
+		Stdout:  stdout,
+		Stderr:  stderr,
+		Discard: io.Discard,
+	}
+}
+
+func NewApplication(outputs *ApplicationOutputs) *Application {
+	if outputs == nil {
+		outputs = NewApplicationOutputs(nil, nil)
+	}
+
+	result := &Application{
+		Opts:    Flags{},
+		Output:  nil,
+		Cache:   *data.NewCache("./eget.db.json"),
+		Outputs: outputs,
+	}
+
+	result.initOutputs()
 
 	return result
 }

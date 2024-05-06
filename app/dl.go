@@ -39,7 +39,7 @@ func getGithubToken() (string, error) {
 }
 
 func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
-	var pbout io.Writer = os.Stderr
+	var pbout io.Writer = app.Outputs.Stderr
 	if app.Opts.Quiet {
 		pbout = io.Discard
 	}

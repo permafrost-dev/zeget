@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io"
-	"os"
 )
 
 func (app *Application) write(format string, args ...any) (n int, err error) {
@@ -15,19 +13,21 @@ func (app *Application) writeLine(format string, args ...any) (n int, err error)
 }
 
 func (app *Application) writeError(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintf(app.Outputs.Stderr, format, args...)
 }
 
 func (app *Application) writeErrorLine(format string, args ...any) {
 	app.writeError(format+"\n", args...)
 }
 
-func (app *Application) initOutputWriter() {
-	if app.Output == nil && !app.Opts.Quiet {
-		app.Output = os.Stderr
+func (app *Application) initOutputs() {
+	if app.Output != nil {
+		return
 	}
 
-	if app.Output == nil && app.Opts.Quiet {
-		app.Output = io.Discard
+	app.Output = app.Outputs.Stderr
+
+	if app.Opts.Quiet {
+		app.Output = app.Outputs.Discard
 	}
 }
