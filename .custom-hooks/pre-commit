@@ -2,35 +2,17 @@
 
 PROJECT_BASE_PATH=$(git rev-parse --show-toplevel)
 LAST_COMMIT=$(git rev-parse HEAD)
-
-
-bunx_bin=$(which bunx)
-npx_bin=$(which npx)
-PKG_RUNNER="$npx_bin"
-
-# if [ -n "$bunx_bin" ]; then
-#     PKG_RUNNER="$bunx_bin"
-# elif [ -n "$npx_bin" ]; then
-#     PKG_RUNNER="$npx_bin"
-# fi
+GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
+export LAST_COMMIT="$LAST_COMMIT"
 
 cd "$PROJECT_BASE_PATH" || exit 0
 
-if [ ! -n "$PKG_RUNNER" ]; then
-    echo "[pre-commit] No PKG_RUNNER (npx/bunx) found, skipping lint-staged run."
-    exit 0
-fi
-
 echo "[pre-commit] $PKG_RUNNER lint-staged"
-
-export LAST_COMMIT="$LAST_COMMIT"
-
-npx -y lint-staged
-
-
-GO_FILES_STAGED=$(git diff --name-only --cached | grep -c .go)
+npx -y lint-staged -v
 
 if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
+    echo "[pre-commit] running golangci-lint"
+
     GOLINT_BIN=$(which golangci-lint)
 
     if [ -n "$GOLINT_BIN" ]; then
@@ -40,4 +22,6 @@ if [ -n "$GO_FILES_STAGED" ] && [ "$GO_FILES_STAGED" != "0" ]; then
 
         $GOLINT_BIN run -c ./.golangci.yaml --new-from-rev "$LAST_COMMIT"
     fi
+else
+    echo "[pre-commit] skipping golangci-lint, no go files staged"
 fi
