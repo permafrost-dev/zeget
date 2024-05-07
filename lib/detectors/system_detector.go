@@ -66,7 +66,7 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 	}
 
 	if len(priority) > 1 {
-		return Asset{}, priority, fmt.Errorf("%d priority matches found", len(matches))
+		return Asset{}, priority, nil //fmt.Errorf("%d priority matches found", len(matches))
 	}
 
 	if len(matches) == 1 {
@@ -74,7 +74,7 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 	}
 
 	if len(matches) > 1 {
-		return Asset{}, matches, fmt.Errorf("%d matches found", len(matches))
+		return Asset{}, matches, nil
 	}
 
 	if len(candidates) == 1 {
@@ -82,7 +82,7 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 	}
 
 	if len(candidates) > 1 {
-		return Asset{}, candidates, fmt.Errorf("%d candidates found (unsure architecture)", len(candidates))
+		return Asset{}, candidates, nil //fmt.Errorf("%d candidates found (unsure architecture)", len(candidates))
 	}
 
 	if len(all) == 1 {

@@ -136,9 +136,9 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
-	if err != nil && len(bins) == 0 {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-	}
+	// if err != nil && len(bins) == 0 {
+	// 	return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	// }
 	if err != nil && len(bins) != 0 && !app.Opts.All {
 		bin = app.selectFromMultipleCandidates(bin, bins, err)
 	}
@@ -215,7 +215,7 @@ func (app *Application) targetToProject(target string) error {
 // if multiple candidates are returned, the user must select manually which one to download
 func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) Asset {
 	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
+		//Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
 	}
 
 	app.writeErrorLine("%v: please select manually", err)
@@ -233,7 +233,7 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 // if there are multiple candidates, have the user select manually
 func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []ExtractedFile, err error) ExtractedFile {
 	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
+		//Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
 	}
 
 	app.writeErrorLine("%v: please select manually", err)
@@ -346,6 +346,12 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 		} else {
 			app.writeLine("Removed `%s`", fn)
 		}
+	}
+
+	if app.cli.NoInteraction {
+		app.Opts.NoInteraction = true
+	} else {
+		app.Opts.NoInteraction = false
 	}
 
 	return target, nil
