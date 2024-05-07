@@ -1,6 +1,7 @@
 package utilities
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/url"
@@ -103,15 +104,15 @@ type RepositoryReference struct {
 	Name  string
 }
 
-func ParseRepositoryReference(s string) *RepositoryReference {
+func ParseRepositoryReference(s string) (*RepositoryReference, error) {
 	if !IsValidRepositoryReference(s) {
-		return nil
+		return nil, fmt.Errorf("invalid repository reference '%s': must be of the form `user/repo`", s)
 	}
 
 	// parts is guaranteed to have 2 elements because IsValidRepositoryReference checks, so no need to check for bounds
 	parts := strings.Split(s, "/")
 
-	return &RepositoryReference{Owner: parts[0], Name: parts[len(parts)-1]}
+	return &RepositoryReference{Owner: parts[0], Name: parts[len(parts)-1]}, nil
 }
 
 // IsLocalFile returns true if the file at 's' exists.
@@ -248,4 +249,14 @@ func GetCurrentDirectory() string {
 // check if two interfaces implement the same type
 func SameImplementedInterface(a, b interface{}) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
+}
+
+// IsErrorOf returns true if err is not nil and is of the type errorCompare.
+func IsErrorOf(err error, errorCompare error) bool {
+	return err != nil && errors.Is(err, errorCompare)
+}
+
+// IsErrorNotOf returns true if err is not nil and is not of the type errorCompare.
+func IsErrorNotOf(err error, errorCompare error) bool {
+	return err != nil && !errors.Is(err, errorCompare)
 }

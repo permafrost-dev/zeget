@@ -39,10 +39,11 @@ var _ = Describe("GithubSourceFinder", func() {
 			}
 
 			client := mockhttp.NewMockHTTPClient()
-			assets, err := githubFinder.Find(client)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(assets).To(HaveLen(1))
-			Expect(assets[0]).To(Equal(expectedAsset))
+			findResult := githubFinder.Find(client)
+
+			Expect(findResult.Error).NotTo(HaveOccurred())
+			Expect(findResult.Assets).To(HaveLen(1))
+			Expect(findResult.Assets[0]).To(Equal(expectedAsset))
 		})
 	})
 })

@@ -36,15 +36,18 @@ type ApplicationOutputs struct {
 }
 
 type Application struct {
-	Output     io.Writer
-	Outputs    *ApplicationOutputs
-	Opts       Flags
-	cli        CliFlags
-	Args       []string
-	flagparser *flags.Parser
-	Config     *Config
-	Cache      data.Cache
-	Filesystem vfs.FS
+	Output      io.Writer
+	Outputs     *ApplicationOutputs
+	Opts        Flags
+	cli         CliFlags
+	Args        []string
+	flagparser  *flags.Parser
+	Config      *Config
+	Cache       data.Cache
+	Filesystem  vfs.FS
+	Reference   *RepositoryReference
+	Target      string
+	TargetFound bool
 }
 
 func NewApplicationOutputs(stdout io.Writer, stderr io.Writer) *ApplicationOutputs {
@@ -86,31 +89,35 @@ func (app *Application) DownloadClient() *download.Client {
 	return download.NewClient(token)
 }
 
-func (app *Application) Run() {
+func (app *Application) Run() *ReturnStatus {
 	app.Cache.LoadFromFile()
 
 	target, _ := app.ProcessFlags(FatalHandler)
 	target = app.ProcessCommands(target)
 
-	app.Cache.AddRepository(target, "", []string{}, time.Now().Add(time.Hour*1))
-
-	finder, tool := app.getFinder(target)
-	assets, err := finder.Find(app.DownloadClient())
-
-	if err != nil && errors.Is(err, finders.ErrNoUpgrade) {
-		app.writeLine("%s: %v", target, err)
-		SuccessExit()
+	if err := app.targetToProject(target); err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	FatalIf(err)
+	finder := app.getFinder()
+	findResult := app.getFindResult(finder)
+	// app.cacheTarget(&finder, findResult)
 
-	assetWrapper := NewAssetWrapper(assets)
+	if shouldReturn, returnStatus := app.shouldReturn(findResult.Error); shouldReturn {
+		return returnStatus
+	}
+
+	assetWrapper := NewAssetWrapper(findResult.Assets)
 	detector, err := detectors.DetermineCorrectDetector(&app.Opts, nil)
-	FatalIf(err)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
 
 	// get the url and candidates from the detector
 	asset, candidates, err := detector.Detect(assetWrapper.Assets)
-	FatalIf(err)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
 
 	if len(candidates) != 0 {
 		asset = app.selectFromMultipleAssets(candidates, err) // manually select which asset to download
@@ -119,39 +126,90 @@ func (app *Application) Run() {
 	assetWrapper.Asset = &asset
 
 	app.writeLine(assetWrapper.Asset.DownloadURL) // print the URL
-	body := app.downloadAsset(assetWrapper.Asset) // download with progress bar and get the response body
+
+	body := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	app.VerifyChecksums(assetWrapper, body)
 
-	if app.Cache.Debug {
-		fmt.Printf("cache %v\n", app.Cache.Data)
+	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	extractor, err := app.getExtractor(assetWrapper.Asset, tool)
-	FatalIf(err)
-
-	// 01
 	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
 	if err != nil && len(bins) == 0 {
-		Fatal(err)
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
-
 	if err != nil && len(bins) != 0 && !app.Opts.All {
 		bin = app.selectFromMultipleCandidates(bin, bins, err)
 	}
 
-	if app.Opts.All {
-		if len(bins) == 0 {
-			bins = []ExtractedFile{bin}
-		}
+	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
 
-		for _, bin := range bins {
-			app.extract(bin)
-		}
+	return NewReturnStatus(Success, nil, fmt.Sprintf("extracted files: %d", extractedCount))
+}
 
-		return
+func (app *Application) wrapBins(bins []ExtractedFile, bin ExtractedFile) []ExtractedFile {
+	if len(bins) == 0 {
+		return []ExtractedFile{bin}
+	}
+	return bins
+}
+
+func (app *Application) shouldReturn(err error) (bool, *ReturnStatus) {
+
+	// remote asset is not a newer version than the current version
+	if IsErrorOf(err, finders.ErrNoUpgrade) {
+		return true, NewReturnStatus(Success, nil, fmt.Sprintf("%s: %v", app.Target, err))
 	}
 
-	app.extract(bin)
+	// some other error occurred
+	if IsErrorNotOf(err, finders.ErrNoUpgrade) {
+		return true, NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	return false, nil
+}
+
+func (app *Application) getFindResult(finder finders.ValidFinder) finders.FindResult {
+	if finder.Finder == nil {
+		return finders.FindResult{Error: fmt.Errorf("finder is nil")}
+	}
+
+	return *finder.Finder.Find(app.DownloadClient())
+}
+
+func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *finders.FindResult) {
+	app.Cache.AddRepository(
+		app.Target,
+		finding.Tool,
+		app.Opts.Asset,
+		findResult,
+		time.Now().Add(time.Hour*1),
+	)
+}
+
+func (app *Application) targetToProject(target string) error {
+	app.Target = target
+	app.TargetFound = false
+
+	if !IsValidRepositoryReference(app.Target) {
+		return fmt.Errorf("invalid GitHub repository URL %s", app.Target)
+	}
+
+	var err error
+
+	//app.Target, app.TargetFound = RepositoryNameFromGithubURL(app.Target)
+	app.Reference, err = ParseRepositoryReference(app.Target)
+
+	if err != nil {
+		return fmt.Errorf("invalid GitHub repository reference  %s: %w", app.Target, err)
+	}
+
+	// if !app.TargetFound {
+	// 	return fmt.Errorf("GitHub repository not found: '%s'", app.Target)
+	// }
+
+	return nil
 }
 
 // if multiple candidates are returned, the user must select manually which one to download
@@ -293,10 +351,10 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	return target, nil
 }
 
-func (app *Application) downloadAsset(asset *Asset) []byte {
+func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResult) []byte {
 	buf := &bytes.Buffer{}
 
-	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, time.Now().Add(time.Hour*1))
+	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, findResult, time.Now().Add(time.Hour*1))
 	repo.UpdateCheckedAt()
 	app.Cache.SaveToFile()
 
@@ -340,6 +398,20 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 	return verifiers.VerifyChecksumNone
 }
 
+func (app *Application) ExtractBins(bin ExtractedFile, bins []ExtractedFile, extractAll bool) int {
+	if extractAll {
+		for _, bin := range bins {
+			app.extract(bin)
+		}
+		return len(bins)
+	}
+
+	app.extract(bin)
+
+	return 1
+
+}
+
 func (app *Application) extract(bin ExtractedFile) {
 	mode := bin.Mode()
 
@@ -379,32 +451,25 @@ func (app *Application) extract(bin ExtractedFile) {
 // a DirectAssetFinder. Otherwise we use a GithubAssetFinder. When a Github
 // repo is provided, we assume the repo name is the 'tool' name (for direct
 // URLs, the tool name is unknown and remains empty).
-func (app *Application) getFinder(project string) (finder finders.Finder, tool string) {
+func (app *Application) getFinder() finders.ValidFinder {
+	project := app.Target
+
 	if IsLocalFile(project) || IsNonGithubURL(project) {
 		app.Opts.System = "all"
-		var result any = finders.DirectAssetFinder{URL: project}
-		return result.(finders.Finder), tool
+		found := finders.DirectAssetFinder{URL: project}
+
+		return finders.NewValidFinder(found, "")
 	}
 
-	if IsInvalidGithubURL(project) {
-		Fatal(fmt.Sprintf("invalid GitHub repository URL %s", project))
-	}
+	project = app.Reference.Name
 
-	if IsGithubURL(project) {
-		project, _ = RepositoryNameFromGithubURL(project)
-	}
-
-	if !IsValidRepositoryReference(project) {
-		Fatal("invalid argument (must be of the form `user/repo`)")
-	}
-
-	tool = ParseRepositoryReference(project).Name
+	tool := app.Reference.Name
 
 	if app.Opts.Source {
 		tag := SetIf(app.Opts.Tag != "", "main", app.Opts.Tag)
-		var result any = finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}
+		result := finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}
 
-		return result.(finders.Finder), tool
+		return finders.NewValidFinder(result, tool)
 	}
 
 	tag := SetIf(app.Opts.Tag != "", "latest", fmt.Sprintf("tags/%s", app.Opts.Tag))
@@ -416,12 +481,14 @@ func (app *Application) getFinder(project string) (finder finders.Finder, tool s
 		mint = Bintime(last, app.Opts.Output)
 	}
 
-	return &finders.GithubAssetFinder{
-		Repo:       project,
+	result := finders.GithubAssetFinder{
+		Repo:       app.Reference.Owner + "/" + app.Reference.Name,
 		Tag:        tag,
 		Prerelease: app.Opts.Prerelease,
 		MinTime:    mint,
-	}, tool
+	}
+
+	return finders.NewValidFinder(result, tool)
 }
 
 func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verifiers.Verifier, sumAsset Asset, err error) {

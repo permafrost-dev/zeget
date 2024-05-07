@@ -5,5 +5,8 @@ import (
 )
 
 func main() {
-	app.NewApplication(nil).Run()
+	appl := app.NewApplication(nil)
+	result := appl.Run()
+
+	appl.Output.Write([]byte(result.Msg + "\n"))
 }

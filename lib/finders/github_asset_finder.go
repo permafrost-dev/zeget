@@ -18,6 +18,8 @@ import (
 // must be given as 'tag/<tag>'. Use 'latest' to get the latest release.
 
 type GithubAssetFinder struct {
+	Finder
+
 	Repo       string
 	Tag        string
 	Prerelease bool
@@ -26,11 +28,11 @@ type GithubAssetFinder struct {
 
 var ErrNoUpgrade = errors.New("requested release is not more recent than current version")
 
-func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error) {
+func (f GithubAssetFinder) Find(client download.ClientContract) *FindResult {
 	if f.Prerelease && f.Tag == "latest" {
 		tag, err := f.GetLatestTag(client)
 		if err != nil {
-			return nil, err
+			return NewInvalidFindResult(err)
 		}
 		f.Tag = "tags/" + tag
 	}
@@ -40,7 +42,7 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 	resp, err := client.GetJSON(url)
 
 	if err != nil {
-		return nil, err
+		return NewInvalidFindResult(err)
 	}
 
 	defer resp.Body.Close()
@@ -48,35 +50,35 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			return NewInvalidFindResult(err)
 		}
 		if strings.HasPrefix(f.Tag, "tags/") && resp.StatusCode == http.StatusNotFound {
 			return f.FindMatch(client)
 		}
-		return nil, &github.Error{
+		return NewInvalidFindResult(&github.Error{
 			Status: resp.Status,
 			Code:   resp.StatusCode,
 			Body:   body,
 			URL:    url,
-		}
+		})
 	}
 
 	// read and unmarshal the resulting json
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return NewInvalidFindResult(err)
 	}
 
 	var release github.Release
 	err = json.Unmarshal(body, &release)
 	if err != nil {
-		return nil, err
+		return NewInvalidFindResult(err)
 	}
 
 	release.ProcessReleaseAssets()
 
 	if release.CreatedAt.Before(f.MinTime) {
-		return nil, ErrNoUpgrade
+		return NewInvalidFindResult(ErrNoUpgrade)
 	}
 
 	// accumulate all assets from the json into a slice
@@ -85,10 +87,10 @@ func (f *GithubAssetFinder) Find(client download.ClientContract) ([]Asset, error
 		assets[idx] = a.CopyToNewAsset()
 	}
 
-	return assets, nil
+	return NewFindResult(assets, nil)
 }
 
-func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, error) {
+func (f *GithubAssetFinder) FindMatch(client download.ClientContract) *FindResult {
 	var tag = f.Tag
 
 	if strings.HasPrefix(f.Tag, "tags/") {
@@ -99,7 +101,7 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 		url := fmt.Sprintf("https://api.github.com/repos/%s/releases?page=%d", f.Repo, page)
 		resp, err := client.GetJSON(url)
 		if err != nil {
-			return nil, err
+			return NewInvalidFindResult(err)
 		}
 
 		defer resp.Body.Close()
@@ -107,26 +109,25 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 		if resp.StatusCode != http.StatusOK {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				return nil, err
+				return NewInvalidFindResult(err)
 			}
-			return nil, &github.Error{
+			return NewInvalidFindResult(&github.Error{
 				Status: resp.Status,
 				Code:   resp.StatusCode,
 				Body:   body,
 				URL:    url,
-			}
+			})
 		}
 
 		// read and unmarshal the resulting json
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			return NewInvalidFindResult(err)
 		}
 
 		var releases []github.Release
-		err = json.Unmarshal(body, &releases)
-		if err != nil {
-			return nil, err
+		if err = json.Unmarshal(body, &releases); err != nil {
+			return NewInvalidFindResult(err)
 		}
 
 		for _, r := range releases {
@@ -140,22 +141,18 @@ func (f *GithubAssetFinder) FindMatch(client download.ClientContract) ([]Asset, 
 
 				for _, a := range r.Assets {
 					assets = append(assets, a.CopyToNewAsset())
-					// Asset{Name: a.Name, DownloadURL: a.DownloadURL})
 				}
-				return assets, nil
+
+				return NewFindResult(assets, nil)
 			}
 		}
 
-		if len(releases) < 30 {
-			break
-		}
-
-		if page > 20 {
+		if len(releases) < 30 || page > 20 {
 			break
 		}
 	}
 
-	return nil, fmt.Errorf("no matching tag for '%s'", tag)
+	return NewInvalidFindResult(fmt.Errorf("no matching tag for '%s'", tag))
 }
 
 // finds the latest pre-release and returns the tag

@@ -10,7 +10,6 @@ import (
 var _ = Describe("DirectAssetFinder", func() {
 	var (
 		directAssetFinder *DirectAssetFinder
-		//downloadClient    interface{}
 	)
 
 	BeforeEach(func() {
@@ -29,7 +28,9 @@ var _ = Describe("DirectAssetFinder", func() {
 				DownloadURL: "https://example.com/asset.zip",
 			}
 
-			assets, err := directAssetFinder.Find(nil)
+			findResult := directAssetFinder.Find(nil)
+			assets := findResult.Assets
+			err := findResult.Error
 
 			Expect(err).To(BeNil())
 			Expect(assets).To(HaveLen(1))

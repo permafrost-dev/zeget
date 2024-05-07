@@ -2,6 +2,8 @@ package data
 
 import (
 	"time"
+
+	"github.com/permafrost-dev/eget/lib/assets"
 )
 
 type RateLimit struct {
@@ -12,15 +14,17 @@ type RateLimit struct {
 }
 
 type RepositoryCacheEntry struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	LastCheckAt     time.Time `json:"last_check_at"`
-	LastDownloadAt  time.Time `json:"last_download_at"`
-	LastDownloadTag string    `json:"last_download_tag"`
-	LastReleaseDate time.Time `json:"last_release_date"`
-	ExpiresAt       time.Time `json:"expires_at"`
-	Target          string    `json:"target"`
-	Filters         []string  `json:"filters"`
+	ID              string         `json:"id"`
+	Name            string         `json:"name"`
+	LastCheckAt     time.Time      `json:"last_check_at"`
+	LastDownloadAt  time.Time      `json:"last_download_at"`
+	LastDownloadTag string         `json:"last_download_tag"`
+	LastReleaseDate time.Time      `json:"last_release_date"`
+	ExpiresAt       time.Time      `json:"expires_at"`
+	Target          string         `json:"target"`
+	Filters         []string       `json:"filters"`
+	Assets          []assets.Asset `json:"assets"`
+	FindError       error          `json:"find_error"`
 	owner           *Cache
 }
 

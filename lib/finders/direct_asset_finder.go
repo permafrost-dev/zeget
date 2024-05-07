@@ -10,11 +10,11 @@ type DirectAssetFinder struct {
 	URL string
 }
 
-func (f *DirectAssetFinder) Find(_ *download.ClientContract) ([]assets.Asset, error) {
+func (f DirectAssetFinder) Find(_ download.ClientContract) *FindResult {
 	asset := assets.Asset{
 		Name:        f.URL,
 		DownloadURL: f.URL,
 	}
 
-	return []assets.Asset{asset}, nil
+	return NewFindResult([]assets.Asset{asset}, nil)
 }

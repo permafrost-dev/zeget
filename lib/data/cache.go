@@ -10,6 +10,7 @@ import (
 	"time"
 
 	ulid "github.com/oklog/ulid/v2"
+	"github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/utilities"
 )
 
@@ -81,7 +82,7 @@ func (c *Cache) SetRateLimit(limit int, remaining int, reset time.Time) {
 	c.SaveToFile()
 }
 
-func (c *Cache) AddRepository(name, target string, filters []string, expiresAt time.Time) (*RepositoryCacheEntry, bool) {
+func (c *Cache) AddRepository(name, target string, filters []string, findResult *finders.FindResult, expiresAt time.Time) (*RepositoryCacheEntry, bool) {
 	if !utilities.IsValidRepositoryReference(name) {
 		return &RepositoryCacheEntry{}, false
 	}
@@ -91,6 +92,8 @@ func (c *Cache) AddRepository(name, target string, filters []string, expiresAt t
 		Name:        name,
 		Target:      target,
 		Filters:     filters,
+		Assets:      findResult.Assets,
+		FindError:   findResult.Error,
 		ExpiresAt:   expiresAt,
 		LastCheckAt: time.Now(),
 	}
