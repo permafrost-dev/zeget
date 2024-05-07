@@ -88,14 +88,14 @@ var _ = Describe("Helpers", func() {
 
 	Describe("ParseRepositoryReference", func() {
 		It("parses valid repository references", func() {
-			ref := ParseRepositoryReference("user/repo")
+			ref, _ := ParseRepositoryReference("user/repo")
 			Expect(ref).NotTo(BeNil())
 			Expect(ref.Owner).To(Equal("user"))
 			Expect(ref.Name).To(Equal("repo"))
 		})
 
 		It("returns nil for invalid references", func() {
-			ref := ParseRepositoryReference("user")
+			ref, _ := ParseRepositoryReference("user")
 			Expect(ref).To(BeNil())
 		})
 	})
