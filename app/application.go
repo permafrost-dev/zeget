@@ -214,9 +214,9 @@ func (app *Application) targetToProject(target string) error {
 
 // if multiple candidates are returned, the user must select manually which one to download
 func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) Asset {
-	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		//Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
-	}
+	// if app.cli.NoInteraction || app.Opts.NoInteraction {
+	// 	//Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
+	// }
 
 	app.writeErrorLine("%v: please select manually", err)
 	choices := make([]interface{}, len(candidates))
@@ -232,9 +232,9 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 
 // if there are multiple candidates, have the user select manually
 func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []ExtractedFile, err error) ExtractedFile {
-	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		//Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
-	}
+	// if app.cli.NoInteraction || app.Opts.NoInteraction {
+	// 	//Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
+	// }
 
 	app.writeErrorLine("%v: please select manually", err)
 
