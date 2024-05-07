@@ -6,6 +6,7 @@ type Asset struct {
 	Name        string
 	DownloadURL string
 	ReleaseDate time.Time
+	Filters     []string
 }
 
 type AssetWrapper struct {

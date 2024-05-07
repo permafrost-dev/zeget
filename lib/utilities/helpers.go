@@ -115,6 +115,10 @@ func ParseRepositoryReference(s string) (*RepositoryReference, error) {
 	return &RepositoryReference{Owner: parts[0], Name: parts[len(parts)-1]}, nil
 }
 
+func (rr *RepositoryReference) String() string {
+	return fmt.Sprintf("%s/%s", rr.Owner, rr.Name)
+}
+
 // IsLocalFile returns true if the file at 's' exists.
 func IsLocalFile(s string) bool {
 	if s == "" {
@@ -259,4 +263,26 @@ func IsErrorOf(err error, errorCompare error) bool {
 // IsErrorNotOf returns true if err is not nil and is not of the type errorCompare.
 func IsErrorNotOf(err error, errorCompare error) bool {
 	return err != nil && !errors.Is(err, errorCompare)
+}
+
+func ExtractToolNameFromURL(url string) string {
+	// Regular expression to find the tool name pattern.
+	// This regex assumes that the tool name is followed by a version number and/or OS/architecture information.
+	re := regexp.MustCompile(`([^\/]+)-?v?[\d\.]*-?([\w]*-?[\w]*\.\w+)?`)
+
+	// Extracting the basename of the URL
+	base := strings.TrimSuffix(url, "/")
+	base = base[strings.LastIndex(base, "/")+1:]
+
+	// Using regex to find matches
+	matches := re.FindStringSubmatch(base)
+
+	if len(matches) > 1 {
+		re2 := regexp.MustCompile(`^[a-zA-Z-]+`)
+		m2 := re2.FindStringSubmatch(matches[1])
+		foundName := strings.Trim(m2[0], "-")
+		return foundName
+	}
+
+	return "Unknown"
 }

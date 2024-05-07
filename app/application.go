@@ -20,6 +20,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/detectors"
 	"github.com/permafrost-dev/eget/lib/download"
 	. "github.com/permafrost-dev/eget/lib/extraction"
+	"github.com/permafrost-dev/eget/lib/filters"
 	"github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/github"
 	. "github.com/permafrost-dev/eget/lib/globals"
@@ -84,6 +85,10 @@ func NewApplication(outputs *ApplicationOutputs) *Application {
 	return result
 }
 
+func (app *Application) ToolName() string {
+	return app.Reference.Name
+}
+
 func (app *Application) DownloadClient() *download.Client {
 	token, _ := getGithubToken()
 	return download.NewClient(token)
@@ -92,16 +97,22 @@ func (app *Application) DownloadClient() *download.Client {
 func (app *Application) Run() *ReturnStatus {
 	app.Cache.LoadFromFile()
 
-	target, _ := app.ProcessFlags(FatalHandler)
-	target = app.ProcessCommands(target)
+	target, returnStatus := app.RunSetup(FatalHandler)
+	if returnStatus != nil {
+		return returnStatus
+	}
 
 	if err := app.targetToProject(target); err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
+	if len(app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters) > 0 {
+		app.Opts.Asset = app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters
+	}
+
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)
-	// app.cacheTarget(&finder, findResult)
+	app.cacheTarget(&finder, &findResult)
 
 	if shouldReturn, returnStatus := app.shouldReturn(findResult.Error); shouldReturn {
 		return returnStatus
@@ -121,6 +132,8 @@ func (app *Application) Run() *ReturnStatus {
 
 	if len(candidates) != 0 {
 		asset = app.selectFromMultipleAssets(candidates, err) // manually select which asset to download
+		app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters = asset.Filters
+		app.Cache.SaveToFile()
 	}
 
 	assetWrapper.Asset = &asset
@@ -146,6 +159,17 @@ func (app *Application) Run() *ReturnStatus {
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
 
 	return NewReturnStatus(Success, nil, fmt.Sprintf("extracted files: %d", extractedCount))
+}
+
+func (app *Application) RunSetup(_ ProcessFlagsErrorHandlerFunc) (string, *ReturnStatus) {
+	var err error
+	var target string
+
+	if target, err = app.ProcessFlags(FatalHandler); err != nil {
+		return "", NewReturnStatus(FatalError, err, fmt.Sprintf("run setup error: %v", err))
+	}
+
+	return app.ProcessCommands(target), nil
 }
 
 func (app *Application) wrapBins(bins []ExtractedFile, bin ExtractedFile) []ExtractedFile {
@@ -198,10 +222,7 @@ func (app *Application) targetToProject(target string) error {
 
 	var err error
 
-	//app.Target, app.TargetFound = RepositoryNameFromGithubURL(app.Target)
-	app.Reference, err = ParseRepositoryReference(app.Target)
-
-	if err != nil {
+	if app.Reference, err = ParseRepositoryReference(app.Target); err != nil {
 		return fmt.Errorf("invalid GitHub repository reference  %s: %w", app.Target, err)
 	}
 
@@ -226,8 +247,13 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 	}
 
 	choice := app.userSelect(choices)
+	choiceStr := fmt.Sprintf("%s", choices[choice-1])
 
-	return candidates[choice-1]
+	result := candidates[choice-1]
+	result.Filters = filters.FilenameToAssetFilters(choiceStr)
+
+	return result
+
 }
 
 // if there are multiple candidates, have the user select manually
@@ -391,7 +417,7 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 		return verifiers.VerifyChecksumVerificationFailed
 	}
 
-	if app.Opts.Verify == "" && sumAsset != (Asset{}) {
+	if app.Opts.Verify == "" && sumAsset.Name != "" {
 		app.writeLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
 	}
@@ -458,47 +484,41 @@ func (app *Application) extract(bin ExtractedFile) {
 // repo is provided, we assume the repo name is the 'tool' name (for direct
 // URLs, the tool name is unknown and remains empty).
 func (app *Application) getFinder() finders.ValidFinder {
-	project := app.Target
-
-	if IsLocalFile(project) || IsNonGithubURL(project) {
+	if IsLocalFile(app.Target) || IsNonGithubURL(app.Target) {
 		app.Opts.System = "all"
-		found := finders.DirectAssetFinder{URL: project}
+		found := finders.DirectAssetFinder{URL: app.Target}
 
-		return finders.NewValidFinder(found, "")
+		toolName := utilities.ExtractToolNameFromURL(found.URL)
+		if toolName == "Unknown" {
+			toolName = ""
+		}
+
+		return finders.NewValidFinder(found, toolName)
 	}
-
-	project = app.Reference.Name
-
-	tool := app.Reference.Name
 
 	if app.Opts.Source {
 		tag := SetIf(app.Opts.Tag != "", "main", app.Opts.Tag)
-		result := finders.GithubSourceFinder{Repo: project, Tag: tag, Tool: tool}
+		result := finders.GithubSourceFinder{Repo: app.Reference.String(), Tag: tag, Tool: app.ToolName()}
 
-		return finders.NewValidFinder(result, tool)
+		return finders.NewValidFinder(result, app.ToolName())
 	}
 
 	tag := SetIf(app.Opts.Tag != "", "latest", fmt.Sprintf("tags/%s", app.Opts.Tag))
 
 	var mint time.Time
 	if app.Opts.UpgradeOnly {
-		parts := strings.Split(project, "/")
-		last := parts[len(parts)-1]
-		mint = Bintime(last, app.Opts.Output)
+		mint = Bintime(app.ToolName(), app.Opts.Output)
 	}
 
-	result := finders.GithubAssetFinder{
-		Repo:       app.Reference.Owner + "/" + app.Reference.Name,
-		Tag:        tag,
-		Prerelease: app.Opts.Prerelease,
-		MinTime:    mint,
-	}
+	result := finders.NewGithubAssetFinder(app.Reference, tag, app.Opts.Prerelease, mint)
 
-	return finders.NewValidFinder(result, tool)
+	return finders.NewValidFinder(result, app.ToolName())
 }
 
-func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verifiers.Verifier, sumAsset Asset, err error) {
-	sumAsset = Asset{}
+func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verifiers.Verifier, _ Asset, err error) {
+	// sumAsset = Asset{
+	// 	Filters: []string{},
+	// }
 
 	if app.Opts.Verify != "" {
 		verifier, err = verifiers.NewSha256Verifier(app.DownloadClient(), app.Opts.Verify)

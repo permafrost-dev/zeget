@@ -12,6 +12,7 @@ import (
 	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/download"
 	"github.com/permafrost-dev/eget/lib/github"
+	"github.com/permafrost-dev/eget/lib/utilities"
 )
 
 // A GithubAssetFinder finds assets for the given Repo at the given tag. Tags
@@ -24,6 +25,15 @@ type GithubAssetFinder struct {
 	Tag        string
 	Prerelease bool
 	MinTime    time.Time // release must be after MinTime to be found
+}
+
+func NewGithubAssetFinder(repo *utilities.RepositoryReference, tag string, prerelease bool, minTime time.Time) *GithubAssetFinder {
+	return &GithubAssetFinder{
+		Repo:       repo.String(),
+		Tag:        tag,
+		Prerelease: prerelease,
+		MinTime:    minTime,
+	}
 }
 
 var ErrNoUpgrade = errors.New("requested release is not more recent than current version")
