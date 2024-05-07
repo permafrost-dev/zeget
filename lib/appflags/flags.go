@@ -1,4 +1,4 @@
-package app
+package appflags
 
 type Flags struct {
 	Tag         string

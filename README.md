@@ -27,7 +27,7 @@ For more in-depth documentation, see [DOCS.md](DOCS.md).
 ## Examples
 
 ```sh
-zeget zyedidia/micro nightly
+zeget zyedidia/micro -t nightly
 zeget jgm/pandoc --to /usr/local/bin
 zeget junegunn/fzf
 zeget neovim/neovim
@@ -36,7 +36,7 @@ zeget --system darwin/amd64 sharkdp/fd
 zeget BurntSushi/ripgrep
 zeget -f eget.1 permafrost-dev/eget
 zeget zachjs/sv2v
-zeget https://go.dev/dl/go1.17.5.linux-amd64.tar.gz --file go --to ~/go1.17.5
+zeget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz --file go --to ~/go1.21.1
 zeget --all --file '*' ActivityWatch/activitywatch
 ```
 
@@ -111,7 +111,7 @@ Directories can also be specified as files to extract, and all files within
 them will be extracted. For example:
 
 ```sh
-eget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz --file go --to ~/go1.21.0
+eget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz --file go --to ~/go1.21.1
 ```
 
 GitHub limits API requests to 60 per hour for unauthenticated users. If you

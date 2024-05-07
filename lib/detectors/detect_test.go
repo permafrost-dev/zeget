@@ -1,16 +1,17 @@
-package app_test
+package detectors_test
 
 import (
 	"reflect"
 	"runtime"
 	"testing"
 
-	"github.com/permafrost-dev/eget/app"
+	"github.com/permafrost-dev/eget/lib/appflags"
 	. "github.com/permafrost-dev/eget/lib/assets"
+	. "github.com/permafrost-dev/eget/lib/detectors"
 )
 
 func TestAllDetector_Detect(t *testing.T) {
-	detector := app.AllDetector{}
+	detector := AllDetector{}
 
 	tests := []struct {
 		name           string
@@ -63,7 +64,7 @@ func TestAllDetector_Detect(t *testing.T) {
 func TestSingleAssetDetector_Detect(t *testing.T) {
 	tests := []struct {
 		name           string
-		detector       app.SingleAssetDetector
+		detector       SingleAssetDetector
 		assets         []Asset
 		wantMatch      string
 		wantCandidates []string
@@ -71,7 +72,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 	}{
 		{
 			name:     "Exact match",
-			detector: app.SingleAssetDetector{Asset: "asset1", Anti: false},
+			detector: SingleAssetDetector{Asset: "asset1", Anti: false},
 			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
@@ -82,7 +83,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 		},
 		{
 			name:     "No match",
-			detector: app.SingleAssetDetector{Asset: "asset3", Anti: false},
+			detector: SingleAssetDetector{Asset: "asset3", Anti: false},
 			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
@@ -93,7 +94,7 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 		},
 		{
 			name:     "Anti match",
-			detector: app.SingleAssetDetector{Asset: "asset1", Anti: true},
+			detector: SingleAssetDetector{Asset: "asset1", Anti: true},
 			assets: []Asset{
 				{Name: "asset1", DownloadURL: "http://example.com/asset1"},
 				{Name: "asset2", DownloadURL: "http://example.com/asset2"},
@@ -122,12 +123,12 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 }
 
 func TestSystemDetector_Detect(t *testing.T) {
-	linuxAMD64, _ := app.NewSystemDetector("linux", "amd64")
-	linuxARM, _ := app.NewSystemDetector("linux", "arm")
+	linuxAMD64, _ := NewSystemDetector("linux", "amd64")
+	linuxARM, _ := NewSystemDetector("linux", "arm")
 
 	tests := []struct {
 		name           string
-		detector       *app.SystemDetector
+		detector       *SystemDetector
 		assets         []Asset
 		wantMatch      string
 		wantCandidates []Asset
@@ -191,48 +192,48 @@ func TestSystemDetector_Detect(t *testing.T) {
 func TestDetermineCorrectDetector(t *testing.T) {
 	tests := []struct {
 		name    string
-		flags   app.Flags
-		want    app.Detector
+		flags   appflags.Flags
+		want    Detector
 		wantErr bool
 	}{
 		{
 			name: "all detector",
-			flags: app.Flags{
+			flags: appflags.Flags{
 				System: "all",
 			},
-			want:    &app.AllDetector{},
+			want:    &AllDetector{},
 			wantErr: false,
 		},
 		{
 			name: "specific system detector",
-			flags: app.Flags{
+			flags: appflags.Flags{
 				System: "linux/amd64",
 			},
-			want: &app.SystemDetector{
-				Os:   app.OSLinux,
-				Arch: app.ArchAMD64,
+			want: &SystemDetector{
+				Os:   OSLinux,
+				Arch: ArchAMD64,
 			},
 			wantErr: false,
 		},
 		{
 			name:  "default system detector",
-			flags: app.Flags{
+			flags: appflags.Flags{
 				// System is empty, should default to runtime.GOOS/runtime.GOARCH
 			},
-			want: &app.SystemDetector{
-				Os:   app.OSLinux,
-				Arch: app.ArchAMD64,
+			want: &SystemDetector{
+				Os:   OSLinux,
+				Arch: ArchAMD64,
 			},
 			wantErr: false,
 		},
 		{
 			name: "invalid system format",
-			flags: app.Flags{
+			flags: appflags.Flags{
 				System: "invalidformat",
 			},
-			want: &app.SystemDetector{
-				Os:   app.OSLinux,
-				Arch: app.ArchAMD64,
+			want: &SystemDetector{
+				Os:   OSLinux,
+				Arch: ArchAMD64,
 			},
 			wantErr: false,
 		},
@@ -240,8 +241,8 @@ func TestDetermineCorrectDetector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			system, _ := app.NewSystemDetector(runtime.GOOS, runtime.GOARCH)
-			got, err := app.DetermineCorrectDetector(&tt.flags, system)
+			system, _ := NewSystemDetector(runtime.GOOS, runtime.GOARCH)
+			got, err := DetermineCorrectDetector(&tt.flags, system)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DetermineCorrectDetector() error = %v, wantErr %v", err, tt.wantErr)
 				return

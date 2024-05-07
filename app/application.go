@@ -14,8 +14,10 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	. "github.com/permafrost-dev/eget/lib/appflags"
 	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/data"
+	"github.com/permafrost-dev/eget/lib/detectors"
 	"github.com/permafrost-dev/eget/lib/download"
 	. "github.com/permafrost-dev/eget/lib/extraction"
 	"github.com/permafrost-dev/eget/lib/finders"
@@ -103,7 +105,7 @@ func (app *Application) Run() {
 	FatalIf(err)
 
 	assetWrapper := NewAssetWrapper(assets)
-	detector, err := DetermineCorrectDetector(&app.Opts, nil)
+	detector, err := detectors.DetermineCorrectDetector(&app.Opts, nil)
 	FatalIf(err)
 
 	// get the url and candidates from the detector
