@@ -14,8 +14,12 @@ downloaded and extracted to the current directory.
 
 ![Eget Demo](https://github.com/zyedidia/blobs/blob/master/eget-demo.gif?raw=true)
 
-zeget is a fork of [eget](https://github.com/zyedidia/eget) with many bug fixes, improvements,
-and new features. It is a drop-in replacement for eget and is fully compatible with the original.
+> **zeget origins**
+>
+> zeget was forked from the original [eget](https://github.com/zyedidia/eget) to implement bug fixes,
+> improvements, new features, as well as major refactoring to a package-based architecture.
+> It is mostly backward-compatible with eget, and should work as a drop-in replacement.
+>
 
 zeget has a number of detection mechanisms and should work out-of-the-box with
 most software that is distributed via single binaries on GitHub releases. First
@@ -30,7 +34,7 @@ For more in-depth documentation, see [DOCS.md](DOCS.md).
 zeget zyedidia/micro -t nightly
 zeget jgm/pandoc --to /usr/local/bin
 zeget junegunn/fzf
-zeget neovim/neovim
+zeget neovim/neovim --no-interaction
 zeget ogham/exa --asset ^musl
 zeget --system darwin/amd64 sharkdp/fd
 zeget BurntSushi/ripgrep
@@ -146,6 +150,7 @@ Application Options:
   -h, --help           show this help message
   -D, --download-all   download all projects defined in the config file
   -k, --disable-ssl    disable SSL verification for download
+      --no-interaction disable all user interaction (e.g. prompting to select an asset)
 ```
 
 ## Configuration
@@ -283,13 +288,13 @@ However, here are some rules that will guarantee compatibility with Eget.
   name. Supported OSes are `darwin`/`macos`, `windows`, `linux`, `netbsd`,
   `openbsd`, `freebsd`, `android`, `illumos`, `solaris`, `plan9`. Supported
   architectures are `amd64`, `i386`, `arm`, `arm64`, `riscv64`.
-- If desired, include `*.sha256` files for each asset, containing the SHA-256
-  checksum of each asset. These checksums will be automatically verified by
-  Eget.
+- If desired, include either `*.sha256` files for each asset that contains the SHA-256
+  checksum, or a `checksums.txt` that contains the SHA-256 checksums for all files in
+  the asset archive. These checksums will be automatically verified by zeget.
 - Include only a single executable or appimage per system in each release archive.
-- Use `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar`, or `.zip` for archives. You may
-  also directly upload the executable without an archive, or a compressed
-  executable ending in `.gz`, `.bz2`, or `.xz`.
+- Use `.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz`, `.tar`, or `.zip` for archives. You may
+  also directly upload the executable without an archive, or a compressed executable
+  ending in `.gz`, `.bz2`, or `.xz`.
 
 ### Does this work with monorepos?
 
