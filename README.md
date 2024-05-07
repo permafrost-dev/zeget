@@ -1,9 +1,16 @@
 # zeget: easy pre-built binary installation
 
-![Codecov](https://img.shields.io/codecov/c/gh/permafrost-dev/eget?style=flat-square&logo=codecov&logoColor=white)
-[![Go Report Card](https://goreportcard.com/badge/github.com/permafrost-dev/eget)](https://goreportcard.com/report/github.com/permafrost-dev/eget)
-[![Release](https://img.shields.io/github/release/permafrost-dev/eget.svg?label=Release)](https://github.com/permafrost-dev/eget/releases)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/permafrost-dev/eget/blob/master/LICENSE)
+<p align="center">
+  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/permafrost-dev/eget/build-and-test.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=test%20suite">
+  <!--<img alt="Release" src="https://img.shields.io/github/release/permafrost-dev/eget.svg?label=Release&style=flat-square" />-->
+  <img alt="Github last commit (main branch)" src="https://img.shields.io/github/last-commit/permafrost-dev/eget/main?display_timestamp=committer&style=flat-square&logo=github&logoColor=white" />
+  <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" />
+  <br>
+  <img alt="codecov" src="https://img.shields.io/codecov/c/gh/permafrost-dev/eget?style=flat-square&logo=codecov&logoColor=white" />
+  <img alt="Code Climate maintainability" src="https://img.shields.io/codeclimate/maintainability/permafrost-dev/eget?style=flat-square&logo=codeclimate&logoColor=white" />
+  <img alt="Code Climate tech debt" src="https://img.shields.io/codeclimate/tech-debt/permafrost-dev/eget?style=flat-square&logo=codeclimate&logoColor=white" />
+  <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/permafrost-dev/eget?style=flat-square" />
+</p>
 
 **zeget** is the best way to easily get pre-built binaries for your favorite
 tools; it downloads and extracts pre-built binaries from releases on GitHub.
