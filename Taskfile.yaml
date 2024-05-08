@@ -36,9 +36,10 @@ tasks:
   fmt:
     desc: Formats source code & documentation
     cmds:
-      - gofmt -s -w .
+      - gofmt -l -w ./main.go ./lib/** ./app
       - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./*.md'
       - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./man/*.md'
+      - '{{.NPM_EXEC}} prettier --write ./*.yaml ./*.yml .github/workflows/*.yml'
 
   build:
     desc: Builds binary

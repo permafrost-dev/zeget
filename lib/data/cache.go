@@ -164,15 +164,9 @@ func (c *Cache) LoadFromFile() error {
 	}
 
 	file, err := os.ReadFile(c.Filename)
-	if err != nil { //&& !os.IsNotExist(err) {
+	if err != nil {
 		return err
 	}
-	// if os.IsNotExist(err) {
-	// 	//
-	// }
-	// if err != nil && !os.IsNotExist(err) {
-	// 	return err
-	// }
 
 	result := json.Unmarshal(file, &c.Data)
 
