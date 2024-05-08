@@ -148,10 +148,11 @@ Application Options:
   -q, --quiet          only print essential output
   -d, --download-only  stop after downloading the asset (no extraction)
       --upgrade-only   only download if release is more recent than current version
-  -a, --asset=         download a specific asset containing the given string; can be specified multiple times for additional filtering; use ^ for anti-match
+  -a, --asset=         download a specific asset containing the given string; can be 
+                       specified multiple times for additional filtering; 
+                       use '^<string>' or '!<string>' for anti-match
       --sha256         show the SHA-256 hash of the downloaded asset
       --verify-sha256= verify the downloaded asset checksum against the one provided
-      --rate           show GitHub API rate limiting information
   -r, --remove         remove existing target files before downloading
   -v, --version        show version information
   -h, --help           show this help message

@@ -24,6 +24,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/github"
 	. "github.com/permafrost-dev/eget/lib/globals"
+	"github.com/permafrost-dev/eget/lib/reporters"
 	"github.com/permafrost-dev/eget/lib/utilities"
 	. "github.com/permafrost-dev/eget/lib/utilities"
 	"github.com/permafrost-dev/eget/lib/verifiers"
@@ -110,6 +111,8 @@ func (app *Application) Run() *ReturnStatus {
 		app.Opts.Asset = app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters
 	}
 
+	app.RefreshRateLimit()
+
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)
 	app.cacheTarget(&finder, &findResult)
@@ -143,6 +146,13 @@ func (app *Application) Run() *ReturnStatus {
 	body := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	app.VerifyChecksums(assetWrapper, body)
 
+	if app.Opts.Hash {
+		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Output).Report(string(body))
+	}
+
+	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
+	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateDownloadedAt(tagDownloaded)
+
 	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
@@ -157,6 +167,8 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
+
+	reporters.NewMessage(app.Output, "number of extracted files: %d\n", extractedCount).Report()
 
 	return NewReturnStatus(Success, nil, fmt.Sprintf("extracted files: %d", extractedCount))
 }
@@ -208,7 +220,7 @@ func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *fi
 		finding.Tool,
 		app.Opts.Asset,
 		findResult,
-		time.Now().Add(time.Hour*1),
+		time.Now().Add(time.Hour*48),
 	)
 }
 
@@ -281,6 +293,20 @@ func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []E
 	return bin
 }
 
+func (app *Application) RefreshRateLimit() error {
+	rateLimitDate, err := github.FetchRateLimit(app.DownloadClient())
+
+	if err == nil {
+		app.Cache.SetRateLimit(
+			rateLimitDate.Limit,
+			rateLimitDate.Remaining,
+			rateLimitDate.ResetsAt.Local(),
+		)
+	}
+
+	return err
+}
+
 type ProcessFlagsErrorHandlerFunc = func(err error) error
 
 func (app *Application) ProcessCommands(target string) string {
@@ -319,18 +345,6 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	if err := app.SetGlobalOptionsFromConfig(); err != nil {
 		errorHandler(err)
 		return "", err
-	}
-
-	if app.cli.Rate {
-		rdat, err := github.FetchRateLimit(app.DownloadClient())
-		app.Cache.SetRateLimit(
-			rdat.Limit,
-			rdat.Remaining,
-			time.Unix(rdat.Reset, 0).Local(),
-		)
-		FatalIf(err)
-		fmt.Println(rdat)
-		os.Exit(0)
 	}
 
 	target := ""
@@ -548,9 +562,9 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 		}
 	}
 
-	if app.Opts.Hash {
-		return &verifiers.Sha256Printer{}, Asset{}, nil
-	}
+	// if app.Opts.Hash {
+	// 	return &verifiers.Sha256Printer{}, Asset{}, nil
+	// }
 
 	return &verifiers.NoVerifier{}, Asset{}, nil
 }

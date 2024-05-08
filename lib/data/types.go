@@ -60,10 +60,10 @@ func (rce *RepositoryCacheEntry) UpdateCheckedAt() {
 }
 
 func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {
-	rce.LastDownloadAt = time.Now()
+	rce.LastDownloadAt = time.Now().Local()
 	rce.LastDownloadTag = tag
 
-	// if rce.owner != nil {
-	// 	rce.owner.SaveToFile()
-	// }
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
 }

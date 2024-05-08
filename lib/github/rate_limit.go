@@ -17,6 +17,7 @@ type RateLimit struct {
 	Limit     int
 	Remaining int
 	Reset     int64
+	ResetsAt  time.Time
 }
 
 func (r RateLimit) ResetTime() time.Time {
@@ -37,22 +38,25 @@ func (r RateLimit) String() string {
 	)
 }
 
-func FetchRateLimit(client *download.Client) (RateLimit, error) {
+func FetchRateLimit(client *download.Client) (*RateLimit, error) {
 	resp, err := client.GetJSON("https://api.github.com/rate_limit")
 
 	if err != nil {
-		return RateLimit{}, err
+		return &RateLimit{}, err
 	}
 
 	defer resp.Body.Close()
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return RateLimit{}, err
+		return &RateLimit{}, err
 	}
 
 	var parsed RateLimitJSON
 	err = json.Unmarshal(b, &parsed)
 
-	return parsed.Resources["core"], err
+	result := parsed.Resources["core"]
+	result.ResetsAt = result.ResetTime()
+
+	return &result, err
 }
