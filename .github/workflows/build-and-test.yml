@@ -46,7 +46,7 @@ jobs:
 
       - name: Run functional test
         env: 
-          EGET_CONFIG: eget.toml
+          EGET_CONFIG: ./eget.toml
           EGET_BIN: ''
           TEST_EGET: ../dist/eget
         run: cd test && go run test_eget.go

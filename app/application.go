@@ -107,8 +107,10 @@ func (app *Application) Run() *ReturnStatus {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	if len(app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters) > 0 {
-		app.Opts.Asset = app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters
+	if app.Cache.Data.HasRepositoryEntryByKey(app.Target) {
+		if len(app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters) > 0 {
+			app.Opts.Asset = app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters
+		}
 	}
 
 	app.RefreshRateLimit()

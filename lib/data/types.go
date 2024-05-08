@@ -33,6 +33,11 @@ type ApplicationData struct {
 	Repositories map[string]*RepositoryCacheEntry `json:"repositories"`
 }
 
+func (ad *ApplicationData) HasRepositoryEntryByKey(key string) bool {
+	_, found := ad.Repositories[key]
+	return found
+}
+
 func (ad *ApplicationData) GetRepositoryEntryByKey(key string, owner *Cache) *RepositoryCacheEntry {
 	result, found := ad.Repositories[key]
 
