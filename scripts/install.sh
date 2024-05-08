@@ -47,7 +47,7 @@ else
   esac
 fi
 
-if [ "x$platform" = "x" ]; then
+if [ "$platform" = "" ]; then
   cat << 'EOM'
 /=====================================\\
 |      COULD NOT DETECT PLATFORM      |
@@ -67,20 +67,20 @@ re-run this script.
 For example:
   $ export GETEGET_PLATFORM=linux_amd64
 EOM
-  printf "  $ curl https://raw.githubusercontent.com/$REPONAME/eget | bash\n"
+  printf "  $ curl https://raw.githubusercontent.com/%s/eget | bash\n" "$REPONAME"
   exit 1
 fi
 
 TAG=$(githubLatestTag $REPONAME)
 extension='tar.gz'
 
-if [ "x$platform" = "xwindows_amd64" ] || [ "x$platform" = "xwindows_386" ]; then
+if [ "$platform" = "windows_amd64" ] || [ "$platform" = "windows_386" ]; then
   extension='zip'
 fi
 
 printf "Detected platform: %s\n" "$platform"
 printf "Latest Version: %s\n" "$TAG"
-printf "Downloading https://github.com/$REPONAME/releases/download/v%s/eget-%s-%s.%s\n" "$TAG" "$TAG" "$platform" "$extension"
+printf "Downloading https://github.com/%s/releases/download/v%s/eget-%s-%s.%s\n" "$REPONAME" "$TAG" "$TAG" "$platform" "$extension"
 
 curl -L "https://github.com/$REPONAME/releases/download/v$TAG/eget-$TAG-$platform.$extension" > "eget.$extension"
 
