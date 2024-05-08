@@ -164,12 +164,12 @@ func (c *Cache) LoadFromFile() error {
 	}
 
 	file, err := os.ReadFile(c.Filename)
-	if err != nil && !os.IsNotExist(err) {
-		//return err
+	if err != nil { //&& !os.IsNotExist(err) {
+		return err
 	}
-	if os.IsNotExist(err) {
-		//
-	}
+	// if os.IsNotExist(err) {
+	// 	//
+	// }
 	// if err != nil && !os.IsNotExist(err) {
 	// 	return err
 	// }
