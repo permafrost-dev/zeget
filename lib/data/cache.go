@@ -159,17 +159,20 @@ func (c *Cache) SaveToFile() error {
 }
 
 func (c *Cache) LoadFromFile() error {
+	if !utilities.IsLocalFile(c.Filename) {
+		c.SaveToFile()
+	}
+
 	file, err := os.ReadFile(c.Filename)
 	if err != nil && !os.IsNotExist(err) {
-		return err
+		//return err
 	}
 	if os.IsNotExist(err) {
-		c.SaveToFile()
-		file, err = os.ReadFile(c.Filename)
+		//
 	}
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
+	// if err != nil && !os.IsNotExist(err) {
+	// 	return err
+	// }
 
 	result := json.Unmarshal(file, &c.Data)
 
