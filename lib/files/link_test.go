@@ -62,6 +62,13 @@ var _ = Describe("Link", func() {
 				_, err := link.Fs.Stat("/two")
 				Expect(err).NotTo(HaveOccurred())
 			})
+
+			It("should remove an existing symlink", func() {
+				_ = link.Write()
+				_ = link.Write()
+				_, err := link.Fs.Stat("/two")
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 	})
 })
