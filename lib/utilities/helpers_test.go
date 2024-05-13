@@ -53,6 +53,20 @@ var _ = Describe("Helpers", func() {
 			modTime := Bintime("testfile", tempDir)
 			Expect(modTime).To(BeTemporally("~", time.Now(), 2*time.Second))
 		})
+
+		It("uses the EGET_BIN environment variable if set", func() {
+			filePath := filepath.Join(tempDir, "testfile")
+			defer os.Remove(filePath)
+
+			err := os.WriteFile(filePath, []byte("test data"), 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			os.Setenv("EGET_BIN", tempDir)
+			time.Sleep(100 * time.Millisecond)
+
+			modTime := Bintime(filePath, "")
+			Expect(modTime.String()).To(Equal("0001-01-01 00:00:00 +0000 UTC"))
+		})
 	})
 
 	Describe("IsURL", func() {
@@ -67,18 +81,21 @@ var _ = Describe("Helpers", func() {
 		})
 	})
 
-	Describe("IsGithubURL", func() {
+	Describe("Github URLs", func() {
 		It("identifies GitHub URLs correctly", func() {
 			Expect(IsGithubURL("https://github.com/user/repo")).To(BeTrue())
 			Expect(IsGithubURL("https://github.com/user/repo.git")).To(BeTrue())
 			Expect(IsGithubURL("https://notgithub.com/user/repo")).To(BeFalse())
 		})
-	})
 
-	Describe("IsInvalidGithubURL", func() {
 		It("identifies invalid GitHub URLs correctly", func() {
 			Expect(IsInvalidGithubURL("https://github.com/user")).To(BeTrue())
 			Expect(IsInvalidGithubURL("https://github.com/user/repo")).To(BeFalse())
+		})
+
+		It("identifies non-GitHub URLs correctly", func() {
+			Expect(IsNonGithubURL("https://example.test")).To(BeTrue())
+			Expect(IsNonGithubURL("https://github.com/a/b")).To(BeFalse())
 		})
 	})
 
@@ -134,6 +151,10 @@ var _ = Describe("Helpers", func() {
 			_, err := os.Create(filePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(IsDirectory(filePath)).To(BeFalse())
+		})
+
+		It("returns false for non-existent paths", func() {
+			Expect(IsDirectory(filepath.Join(tempDir, "nonexistent123"))).To(BeFalse())
 		})
 	})
 
@@ -198,6 +219,15 @@ var _ = Describe("Helpers", func() {
 			{Name: "file.sha256sum"},
 		}
 		Expect(FindChecksumAsset(assets.Asset{Name: "file"}, assetList)).To(Equal(assets.Asset{Name: "file.sha256"}))
+	})
+
+	It("returns an empty asset if no checksum asset is found", func() {
+		assetList := []assets.Asset{
+			{Name: "file"},
+			{Name: "file.sha256sum"},
+		}
+
+		Expect(FindChecksumAsset(assets.Asset{Name: "abc"}, assetList)).To(Equal(assets.Asset{}))
 	})
 
 	It("Gets mode from file name", func() {
