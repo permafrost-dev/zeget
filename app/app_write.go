@@ -4,20 +4,20 @@ import (
 	"fmt"
 )
 
-func (app *Application) write(format string, args ...any) (n int, err error) {
+func (app *Application) Write(format string, args ...any) (n int, err error) {
 	return fmt.Fprintf(app.Output, format, args...)
 }
 
-func (app *Application) writeLine(format string, args ...any) (n int, err error) {
-	return app.write(format+"\n", args...)
+func (app *Application) WriteLine(format string, args ...any) (n int, err error) {
+	return app.Write(format+"\n", args...)
 }
 
-func (app *Application) writeError(format string, args ...any) {
+func (app *Application) WriteError(format string, args ...any) {
 	fmt.Fprintf(app.Outputs.Stderr, format, args...)
 }
 
-func (app *Application) writeErrorLine(format string, args ...any) {
-	app.writeError(format+"\n", args...)
+func (app *Application) WriteErrorLine(format string, args ...any) {
+	app.WriteError(format+"\n", args...)
 }
 
 func (app *Application) initOutputs() {

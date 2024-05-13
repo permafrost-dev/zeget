@@ -17,6 +17,7 @@ type Flags struct {
 	Remove        bool
 	DisableSSL    bool
 	NoInteraction bool
+	Verbose       bool
 }
 
 type CliFlags struct {
@@ -34,9 +35,10 @@ type CliFlags struct {
 	Hash          *bool     `long:"sha256" description:"show the SHA-256 hash of the downloaded asset"`
 	Verify        *string   `long:"verify-sha256" description:"verify the downloaded asset checksum against the one provided"`
 	Remove        *bool     `short:"r" long:"remove" description:"remove the given file from $EGET_BIN or the current directory"`
-	Version       bool      `short:"v" long:"version" description:"show version information"`
+	Version       bool      `short:"V" long:"version" description:"show version information"`
 	Help          bool      `short:"h" long:"help" description:"show this help message"`
 	DownloadAll   bool      `short:"D" long:"download-all" description:"download all projects defined in the config file"`
 	DisableSSL    *bool     `short:"k" long:"disable-ssl" description:"disable SSL verification for download requests"`
 	NoInteraction bool      `long:"no-interaction" description:"do not prompt for user input"`
+	Verbose       *bool     `short:"v" long:"verbose" description:"show verbose output"`
 }

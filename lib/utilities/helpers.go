@@ -106,7 +106,7 @@ type RepositoryReference struct {
 
 func ParseRepositoryReference(s string) (*RepositoryReference, error) {
 	if !IsValidRepositoryReference(s) {
-		return nil, fmt.Errorf("invalid repository reference '%s': must be of the form `user/repo`", s)
+		return nil, NewInvalidGitHubProjectReferenceError(s)
 	}
 
 	// parts is guaranteed to have 2 elements because IsValidRepositoryReference checks, so no need to check for bounds

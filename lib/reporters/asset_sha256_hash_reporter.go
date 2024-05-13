@@ -13,11 +13,11 @@ type AssetSha256HashReporter struct {
 	Output io.Writer
 }
 
-func (a *AssetSha256HashReporter) Report(input ...interface{}) error {
+func (r *AssetSha256HashReporter) Report(input ...interface{}) error {
 	var value string = input[0].(string)
 	checksum := sha256.Sum256([]byte(value))
 
-	fmt.Fprintf(a.Output, "› %x %s\n", checksum, a.Asset.Name)
+	fmt.Fprintf(r.Output, "› %x %s\n", checksum, r.Asset.Name)
 
 	return nil
 }

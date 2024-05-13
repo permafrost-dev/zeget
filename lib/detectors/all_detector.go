@@ -11,9 +11,9 @@ import (
 // candidates.
 type AllDetector struct{}
 
-func (a *AllDetector) Detect(assets []Asset) (Asset, []Asset, error) {
+func (a *AllDetector) Detect(assets []Asset) (DetectionResult, error) {
 	if len(assets) == 1 {
-		return assets[0], nil, nil
+		return NewDetectionResult(&assets[0], nil), nil
 	}
-	return Asset{}, assets, fmt.Errorf("%d matches found", len(assets))
+	return NewDetectionResult(&Asset{}, assets), fmt.Errorf("%d matches found", len(assets))
 }

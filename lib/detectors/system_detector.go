@@ -36,7 +36,7 @@ func NewSystemDetector(sos, sarch string) (*SystemDetector, error) {
 // match the OS are found, and no full OS/Arch matches are found, the OS
 // matches are returned as candidates. Otherwise all assets are returned as
 // candidates.
-func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
+func (d *SystemDetector) Detect(assets []Asset) (DetectionResult, error) {
 	var priority []Asset
 	var matches []Asset
 	var candidates []Asset
@@ -62,32 +62,32 @@ func (d *SystemDetector) Detect(assets []Asset) (Asset, []Asset, error) {
 	}
 
 	if len(priority) == 1 {
-		return priority[0], nil, nil
+		return NewDetectionResult(&priority[0], nil), nil
 	}
 
 	if len(priority) > 1 {
-		return Asset{}, priority, nil //fmt.Errorf("%d priority matches found", len(matches))
+		return NewDetectionResult(&Asset{}, priority), nil //fmt.Errorf("%d priority matches found", len(matches))
 	}
 
 	if len(matches) == 1 {
-		return matches[0], nil, nil
+		return NewDetectionResult(&matches[0], nil), nil
 	}
 
 	if len(matches) > 1 {
-		return Asset{}, matches, nil
+		return NewDetectionResult(&Asset{}, matches), nil
 	}
 
 	if len(candidates) == 1 {
-		return candidates[0], nil, nil
+		return NewDetectionResult(&candidates[0], nil), nil
 	}
 
 	if len(candidates) > 1 {
-		return Asset{}, candidates, nil //fmt.Errorf("%d candidates found (unsure architecture)", len(candidates))
+		return NewDetectionResult(&Asset{}, candidates), nil //fmt.Errorf("%d candidates found (unsure architecture)", len(candidates))
 	}
 
 	if len(all) == 1 {
-		return all[0], nil, nil
+		return NewDetectionResult(&all[0], nil), nil
 	}
 
-	return Asset{}, all, fmt.Errorf("no candidates found")
+	return NewDetectionResult(&Asset{}, all), fmt.Errorf("no candidates found")
 }

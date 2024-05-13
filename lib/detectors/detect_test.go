@@ -46,7 +46,9 @@ func TestAllDetector_Detect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMatch, gotCandidates, err := detector.Detect(tt.assets)
+			gotDetected, err := detector.Detect(tt.assets)
+			gotMatch := gotDetected.Asset
+			gotCandidates := gotDetected.Candidates
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AllDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -107,7 +109,9 @@ func TestSingleAssetDetector_Detect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMatch, gotCandidates, err := tt.detector.Detect(tt.assets)
+			gotDetected, err := tt.detector.Detect(tt.assets)
+			gotMatch := gotDetected.Asset
+			gotCandidates := gotDetected.Candidates
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SingleAssetDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -174,7 +178,10 @@ func TestSystemDetector_Detect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMatch, gotCandidates, err := tt.detector.Detect(tt.assets)
+			gotDetected, err := tt.detector.Detect(tt.assets)
+			gotMatch := gotDetected.Asset
+			gotCandidates := gotDetected.Candidates
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SystemDetector.Detect() error = %v, wantErr %v", err, tt.wantErr)
 				return

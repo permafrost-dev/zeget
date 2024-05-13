@@ -107,10 +107,9 @@ func (app *Application) Run() *ReturnStatus {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	if app.Cache.Data.HasRepositoryEntryByKey(app.Target) {
-		if len(app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters) > 0 {
-			app.Opts.Asset = app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters
-		}
+	cacheItem := app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache)
+	if len(app.Opts.Asset) == 0 && len(cacheItem.Filters) > 0 {
+		app.Opts.Asset = cacheItem.Filters
 	}
 
 	app.RefreshRateLimit()
@@ -130,26 +129,30 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	// get the url and candidates from the detector
-	asset, candidates, err := detector.Detect(assetWrapper.Assets)
+	detected, err := detector.Detect(assetWrapper.Assets)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	if len(candidates) != 0 {
-		asset = app.selectFromMultipleAssets(candidates, err) // manually select which asset to download
+	asset := detected.Asset
+
+	if len(detected.Candidates) != 0 {
+		asset = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
+
+		// convert the selected asset to an array of filters, then save them to file for future use
 		app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters = asset.Filters
 		app.Cache.SaveToFile()
 	}
 
 	assetWrapper.Asset = &asset
 
-	app.writeLine(assetWrapper.Asset.DownloadURL) // print the URL
+	app.WriteLine(assetWrapper.Asset.DownloadURL) // print the URL
 
 	body := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	app.VerifyChecksums(assetWrapper, body)
 
 	if app.Opts.Hash {
-		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Output).Report(string(body))
+		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Outputs.Stdout).Report(string(body))
 	}
 
 	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
@@ -170,7 +173,9 @@ func (app *Application) Run() *ReturnStatus {
 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
 
-	reporters.NewMessage(app.Output, "number of extracted files: %d\n", extractedCount).Report()
+	if app.Opts.Verbose {
+		reporters.NewMessageReporter(app.Output, "number of extracted files: %d\n", extractedCount).Report()
+	}
 
 	return NewReturnStatus(Success, nil, fmt.Sprintf("extracted files: %d", extractedCount))
 }
@@ -227,22 +232,14 @@ func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *fi
 }
 
 func (app *Application) targetToProject(target string) error {
+	var err error
+
 	app.Target = target
 	app.TargetFound = false
 
-	if !IsValidRepositoryReference(app.Target) {
-		return fmt.Errorf("invalid GitHub repository URL %s", app.Target)
-	}
-
-	var err error
-
 	if app.Reference, err = ParseRepositoryReference(app.Target); err != nil {
-		return fmt.Errorf("invalid GitHub repository reference  %s: %w", app.Target, err)
+		return err
 	}
-
-	// if !app.TargetFound {
-	// 	return fmt.Errorf("GitHub repository not found: '%s'", app.Target)
-	// }
 
 	return nil
 }
@@ -253,7 +250,7 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 		Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
 	}
 
-	app.writeErrorLine("%v: please select manually", err)
+	app.WriteErrorLine("%v: please select manually", err)
 	choices := make([]interface{}, len(candidates))
 
 	for i := range candidates {
@@ -276,7 +273,7 @@ func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []E
 		Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
 	}
 
-	app.writeErrorLine("%v: please select manually", err)
+	app.WriteErrorLine("%v: please select manually", err)
 
 	choices := make([]interface{}, len(bins)+1)
 	for i := range bins {
@@ -314,7 +311,7 @@ type ProcessFlagsErrorHandlerFunc = func(err error) error
 func (app *Application) ProcessCommands(target string) string {
 	switch target {
 	case "upgrade":
-		app.writeLine("upgrading to the latest version of " + ApplicationName + "...")
+		app.WriteLine("upgrading to the latest version of " + ApplicationName + "...")
 		return ApplicationRepository
 	default:
 		return target
@@ -369,13 +366,13 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	}
 
 	if len(app.Args) <= 0 {
-		app.writeLine("no target given")
+		app.WriteLine("no target given")
 		app.flagparser.WriteHelp(os.Stdout)
 		SuccessExit()
 	}
 
 	if app.Opts.DisableSSL {
-		app.writeErrorLine("warning: SSL verification is disabled")
+		app.WriteErrorLine("warning: SSL verification is disabled")
 	}
 
 	if app.Opts.Remove {
@@ -384,9 +381,9 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 
 		fn := filepath.Join(searchPath, filepath.Base(target))
 		if err := os.Remove(fn); err != nil {
-			app.writeErrorLine("%s", err.Error())
+			app.WriteErrorLine("%s", err.Error())
 		} else {
-			app.writeLine("Removed `%s`", fn)
+			app.WriteLine("Removed `%s`", fn)
 		}
 	}
 
@@ -395,6 +392,8 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	} else {
 		app.Opts.NoInteraction = false
 	}
+
+	app.Opts.Verbose = app.cli.Verbose != nil && *app.cli.Verbose
 
 	return target, nil
 }
@@ -420,26 +419,26 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 	verifier, sumAsset, err := app.getVerifier(*wrapper.Asset, wrapper.Assets)
 
 	if verifier != nil && !utilities.SameImplementedInterface(verifier, verifiers.NoVerifier{}) {
-		app.write("› performing verification for %s...", wrapper.Asset.Name)
+		app.Write("› performing verification for %s...", wrapper.Asset.Name)
 	}
 
 	if err != nil {
-		app.writeLine("Checksum verification failed, could not create a verifier.")
+		app.WriteLine("Checksum verification failed, could not create a verifier.")
 		return verifiers.VerifyChecksumFailedNoVerifier
 	}
 
 	if err = verifier.Verify(body); err != nil {
-		app.writeLine("failed, %v", err)
+		app.WriteLine("failed, %v", err)
 		return verifiers.VerifyChecksumVerificationFailed
 	}
 
 	if app.Opts.Verify == "" && sumAsset.Name != "" {
-		app.writeLine("verified ✔")
+		app.WriteLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
 	}
 
 	if app.Opts.Verify != "" {
-		app.writeLine("verified ✔")
+		app.WriteLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
 	}
 
@@ -492,7 +491,7 @@ func (app *Application) extract(bin ExtractedFile) {
 		Fatal(err)
 	}
 
-	app.writeLine("Extracted `%s` to `%s`", bin.ArchiveName, out)
+	app.WriteLine("Extracted `%s` to `%s`", bin.ArchiveName, out)
 }
 
 // Determine the appropriate Finder to use. If a.Opts.URL is provided, we use
@@ -546,7 +545,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 
 	for _, item := range assets {
 		if item.Name == asset.Name+".sha256sum" || item.Name == asset.Name+".sha256" {
-			app.writeLine("verification against %s (%s)", item.Name, item.DownloadURL)
+			app.WriteLine("verification against %s (%s)", item.Name, item.DownloadURL)
 
 			verifier := verifiers.Sha256AssetVerifier{AssetURL: item.DownloadURL}
 			verifier.WithClient(app.DownloadClient())
@@ -559,7 +558,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 				return nil, item, fmt.Errorf("extract binary name from asset url: %s: %w", asset, err)
 			}
 			binaryName := path.Base(binaryURL.Path)
-			app.writeLine("› performing checksum verifications against %s (%s)", item.Name, item.DownloadURL)
+			app.WriteLine("› performing checksum verifications against %s (%s)", item.Name, item.DownloadURL)
 			return &verifiers.Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, Client: download.NewClient("")}, item, nil
 		}
 	}
@@ -603,13 +602,13 @@ func (app *Application) getExtractor(asset *Asset, tool string) (extractor Extra
 // selection.
 func (app *Application) userSelect(choices []interface{}) int {
 	for i, c := range choices {
-		app.writeErrorLine("(%d) %v", i+1, c)
+		app.WriteErrorLine("(%d) %v", i+1, c)
 	}
 
 	var choice int
 
 	for {
-		app.writeError("Enter selection number: ")
+		app.WriteError("Enter selection number: ")
 		_, err := fmt.Scanf("%d", &choice)
 		if err == nil && (choice <= 0 || choice > len(choices)) {
 			err = fmt.Errorf("%d is out of bounds", choice)
@@ -621,7 +620,7 @@ func (app *Application) userSelect(choices []interface{}) int {
 			Fatal("Error reading selection")
 		}
 
-		app.writeErrorLine("Invalid selection: %v", err)
+		app.WriteErrorLine("Invalid selection: %v", err)
 	}
 
 	return choice

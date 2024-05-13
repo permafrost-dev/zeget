@@ -7,15 +7,15 @@ import (
 	"github.com/permafrost-dev/eget/lib/utilities"
 )
 
-type Message struct {
+type MessageReporter struct {
 	Output       io.Writer
 	FormatString string
 	Arguments    []interface{}
 	Reporter
 }
 
-func (m *Message) Report(input ...interface{}) error {
-	if len(input) == 0 {
+func (m *MessageReporter) Report(input ...interface{}) error {
+	if len(input) == 0 && len(m.FormatString) == 0 {
 		return nil
 	}
 
@@ -29,8 +29,8 @@ func (m *Message) Report(input ...interface{}) error {
 	return err
 }
 
-func NewMessage(output io.Writer, formatString string, arguments ...interface{}) *Message {
-	return &Message{
+func NewMessageReporter(output io.Writer, formatString string, arguments ...interface{}) *MessageReporter {
+	return &MessageReporter{
 		Output:       output,
 		FormatString: formatString,
 		Arguments:    arguments,

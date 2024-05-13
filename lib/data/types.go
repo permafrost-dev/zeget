@@ -26,6 +26,7 @@ type RepositoryCacheEntry struct {
 	Assets          []assets.Asset `json:"assets"`
 	FindError       error          `json:"find_error"`
 	owner           *Cache
+	exists          bool
 }
 
 type ApplicationData struct {
@@ -41,9 +42,11 @@ func (ad *ApplicationData) HasRepositoryEntryByKey(key string) bool {
 func (ad *ApplicationData) GetRepositoryEntryByKey(key string, owner *Cache) *RepositoryCacheEntry {
 	result, found := ad.Repositories[key]
 
-	if found {
-		result.owner = owner
+	if !found {
+		return &RepositoryCacheEntry{Filters: []string{}, Assets: []assets.Asset{}, owner: owner}
 	}
+
+	result.owner = owner
 
 	return result
 }
@@ -71,4 +74,8 @@ func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {
 	if rce.owner != nil {
 		rce.owner.SaveToFile()
 	}
+}
+
+func (rce *RepositoryCacheEntry) Exists() bool {
+	return rce.exists
 }

@@ -13,7 +13,7 @@ type Detector interface {
 	// Detect takes a list of possible assets and returns a direct match. If a
 	// single direct match is not found, it returns a list of candidates and an
 	// error explaining what happened.
-	Detect(assets []Asset) (Asset, []Asset, error)
+	Detect(assets []Asset) (DetectionResult, error)
 }
 
 // Determine the appropriate detector. If the --system is 'all', we use an

@@ -158,7 +158,7 @@ func (app *Application) initializeConfig() {
 			},
 			Repositories: make(map[string]ConfigRepository, 0),
 		}
-		app.writeErrorLine("error loading configuration file: %s", err.Error())
+		app.WriteErrorLine("error loading configuration file: %s", err.Error())
 		return
 	}
 

@@ -77,9 +77,9 @@ func (tf *TargetFile) HasFilename() bool {
 }
 
 func (tf *TargetFile) Name() string {
-	if tf.Filename != nil {
-		return *tf.Filename
+	if tf.Filename == nil {
+		return ""
 	}
 
-	return ""
+	return *tf.Filename
 }

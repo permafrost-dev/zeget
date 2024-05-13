@@ -45,15 +45,17 @@ func GetTargetFile(fs vfs.FS, filename string, mode fs.FileMode, removeExisting 
 	}
 
 	if removeExisting {
-		os.Remove(filename)
+		fs.Remove(filename)
 	}
 
 	fs.Mkdir(filepath.Dir(filename), 0755)
 
 	file, err := fs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-	if err != nil {
-		return NewTargetFile(fs, nil, "", false).WithError(err)
-	}
+	// if err != nil {
+	// 	return NewTargetFile(fs, nil, "", false).WithError(err)
+	// }
 
-	return NewTargetFile(fs, file, filename, true)
+	return NewTargetFile(fs, file, filename, err != nil).WithError(err)
+
+	// return NewTargetFile(fs, file, filename, true)
 }
