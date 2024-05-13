@@ -30,7 +30,8 @@ func (gc *GlobChooser) Choose(name string, _ bool, _ fs.FileMode) (bool, bool) {
 	if len(name) > 0 && name[len(name)-1] == '/' {
 		name = name[:len(name)-1]
 	}
-	return false, gc.g.Match(filepath.Base(name)) || gc.g.Match(name)
+
+	return gc.g.Match(name), gc.g.Match(filepath.Base(name)) || gc.g.Match(name)
 }
 
 func (gc *GlobChooser) String() string {

@@ -20,6 +20,10 @@ func (e ExtractedFile) Mode() fs.FileMode {
 	return utilities.ModeFrom(e.Name, e.mode)
 }
 
+func (e ExtractedFile) SetMode(mode fs.FileMode) {
+	e.mode = mode
+}
+
 // String returns the archive name of this extracted file
 func (e ExtractedFile) String() string {
 	return e.ArchiveName
