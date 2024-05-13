@@ -38,7 +38,7 @@ func (r RateLimit) String() string {
 	)
 }
 
-func FetchRateLimit(client *download.Client) (*RateLimit, error) {
+func FetchRateLimit(client download.ClientContract) (*RateLimit, error) {
 	resp, err := client.GetJSON("https://api.github.com/rate_limit")
 
 	if err != nil {

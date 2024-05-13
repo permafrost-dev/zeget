@@ -2,6 +2,7 @@ package mockhttp
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 
@@ -59,6 +60,10 @@ func (m HTTPClient) AddJSONResponse(url string, json string, statusCode int) {
 	m.Responses[url] = append(m.Responses[url], JSONResponse{Body: json, StatusCode: statusCode})
 }
 
+func (m HTTPClient) ResetJSONResponsesForURL(url string) {
+	delete(m.Responses, url)
+}
+
 func (m HTTPClient) RoundTrip(_ *http.Request) (*http.Response, error) {
 	return NewMockResponse("mock body", http.StatusOK), nil
 }
@@ -73,7 +78,13 @@ func (m HTTPClient) GetJSON(url string) (*http.Response, error) {
 
 	for k, v := range m.Responses {
 		if k == url {
-			return NewMockResponse(v[0].Body, v[0].StatusCode), nil
+			var err error = nil
+
+			if v[0].StatusCode == http.StatusInternalServerError {
+				err = errors.New("mock 500 error")
+			}
+
+			return NewMockResponse(v[0].Body, v[0].StatusCode), err
 		}
 	}
 
