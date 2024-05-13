@@ -174,12 +174,6 @@ var _ = Describe("TargetFile", func() {
 	})
 
 	It("should not close a targetfile on cleanup", func() {
-		tempFile, err := os.CreateTemp("", "targetfile_test")
-		if err != nil {
-			Fail(fmt.Sprintf("Failed to create temp file: %v", err))
-		}
-		defer os.Remove(tempFile.Name()) // clean up
-
 		filename := tempFile.Name()
 		tf := &targetfile.TargetFile{
 			File:        tempFile,
@@ -188,7 +182,7 @@ var _ = Describe("TargetFile", func() {
 			Fs:          fs,
 		}
 
-		err = tf.Cleanup()
+		err := tf.Cleanup()
 		Expect(err).To(BeNil())
 	})
 
