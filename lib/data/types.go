@@ -79,3 +79,7 @@ func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {
 func (rce *RepositoryCacheEntry) Exists() bool {
 	return rce.exists
 }
+
+func (rce *RepositoryCacheEntry) GetOwner() *Cache {
+	return rce.owner
+}
