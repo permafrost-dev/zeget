@@ -70,6 +70,13 @@ var _ = Describe("lib/home > PathExpander", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(expandedPath).To(Equal(testPath))
 			})
+
+			It("expands the path correctly", func() {
+				testPath := "/some/path"
+				expandedPath, err := Expand(testPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(expandedPath).To(Equal(testPath))
+			})
 		})
 
 		Context("when path starts with ~ and homePath is set", func() {
