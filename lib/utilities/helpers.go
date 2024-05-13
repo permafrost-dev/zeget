@@ -211,34 +211,10 @@ func SetIf[T interface{}](condition bool, original T, newValue T) T {
 	return original
 }
 
-func Fatal(a ...interface{}) error {
-	fmt.Fprintln(os.Stderr, a...)
-	os.Exit(1)
-
-	return a[0].(error)
-}
-
 func FatalHandler(err error) error {
-	Fatal(err)
+	fmt.Fprintln(os.Stderr, err.Error())
+	os.Exit(1)
 	return err
-}
-
-func FatalIf(err error, a ...interface{}) {
-	if err != nil {
-		Fatal(err, a)
-	}
-}
-
-func SuccessExit(_ ...interface{}) {
-	os.Exit(0)
-}
-
-func ConditionalExit(err error) {
-	if err != nil {
-		Fatal(err)
-	}
-
-	SuccessExit()
 }
 
 func GetCurrentDirectory() string {

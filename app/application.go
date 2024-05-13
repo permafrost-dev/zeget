@@ -52,6 +52,9 @@ type Application struct {
 	TargetFound bool
 }
 
+var ErrNoTargetGiven = errors.New("no target given")
+var ErrSuccess = errors.New("success")
+
 func NewApplicationOutputs(stdout io.Writer, stderr io.Writer) *ApplicationOutputs {
 	if stdout == nil {
 		stdout = os.Stdout
@@ -137,7 +140,10 @@ func (app *Application) Run() *ReturnStatus {
 	asset := detected.Asset
 
 	if len(detected.Candidates) != 0 {
-		asset = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
+		asset, err = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
+		if err != nil {
+			return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+		}
 
 		// convert the selected asset to an array of filters, then save them to file for future use
 		app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters = asset.Filters
@@ -148,7 +154,10 @@ func (app *Application) Run() *ReturnStatus {
 
 	app.WriteLine(assetWrapper.Asset.DownloadURL) // print the URL
 
-	body := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
+	body, err := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
 	app.VerifyChecksums(assetWrapper, body)
 
 	if app.Opts.Hash {
@@ -168,7 +177,11 @@ func (app *Application) Run() *ReturnStatus {
 	// 	return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	// }
 	if err != nil && len(bins) != 0 && !app.Opts.All {
-		bin = app.selectFromMultipleCandidates(bin, bins, err)
+		var e error
+		bin, e = app.selectFromMultipleCandidates(bin, bins, err)
+		if e != nil {
+			return NewReturnStatus(FatalError, e, fmt.Sprintf("error: %v", e))
+		}
 	}
 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
@@ -185,6 +198,10 @@ func (app *Application) RunSetup(_ ProcessFlagsErrorHandlerFunc) (string, *Retur
 	var target string
 
 	if target, err = app.ProcessFlags(FatalHandler); err != nil {
+		if errors.Is(err, ErrNoTargetGiven) || errors.Is(err, ErrSuccess) {
+			return "", NewReturnStatus(Success, nil, "")
+		}
+
 		return "", NewReturnStatus(FatalError, err, fmt.Sprintf("run setup error: %v", err))
 	}
 
@@ -245,9 +262,9 @@ func (app *Application) targetToProject(target string) error {
 }
 
 // if multiple candidates are returned, the user must select manually which one to download
-func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) Asset {
+func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) (Asset, error) {
 	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		Fatal("error: multiple candidates found, cannot select automatically (user interaction disabled)")
+		return Asset{}, fmt.Errorf("error: multiple candidates found, cannot select automatically (user interaction disabled)")
 	}
 
 	app.WriteErrorLine("%v: please select manually", err)
@@ -257,20 +274,24 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 		choices[i] = path.Base(candidates[i].Name)
 	}
 
-	choice := app.userSelect(choices)
+	choice, err := app.userSelect(choices)
+	if err != nil {
+		return Asset{}, fmt.Errorf("error: %v", err)
+	}
+
 	choiceStr := fmt.Sprintf("%s", choices[choice-1])
 
 	result := candidates[choice-1]
 	result.Filters = filters.FilenameToAssetFilters(choiceStr)
 
-	return result
+	return result, nil
 
 }
 
 // if there are multiple candidates, have the user select manually
-func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []ExtractedFile, err error) ExtractedFile {
+func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []ExtractedFile, err error) (ExtractedFile, error) {
 	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		Fatal("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
+		return ExtractedFile{}, fmt.Errorf("error: multiple assets found, cannot prompt user for selection (user interaction disabled)")
 	}
 
 	app.WriteErrorLine("%v: please select manually", err)
@@ -281,15 +302,19 @@ func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []E
 	}
 
 	choices[len(bins)] = "all"
-	choice := app.userSelect(choices)
+	choice, err := app.userSelect(choices)
+
+	if err != nil {
+		return ExtractedFile{}, err
+	}
 
 	if choice == len(bins)+1 {
 		app.Opts.All = true
 	} else {
-		return bins[choice-1]
+		return bins[choice-1], nil
 	}
 
-	return bin
+	return bin, nil
 }
 
 func (app *Application) RefreshRateLimit() error {
@@ -331,12 +356,12 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 
 	if app.cli.Version {
 		fmt.Println("eget version", Version)
-		os.Exit(0)
+		return "", ErrSuccess
 	}
 
 	if app.cli.Help {
 		app.flagparser.WriteHelp(os.Stdout)
-		os.Exit(0)
+		return "", ErrSuccess
 	}
 
 	app.initializeConfig()
@@ -362,13 +387,13 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 			errorHandler(err)
 			return "", err
 		}
-		ConditionalExit(err)
+		return "", ErrSuccess
 	}
 
 	if len(app.Args) <= 0 {
 		app.WriteLine("no target given")
 		app.flagparser.WriteHelp(os.Stdout)
-		SuccessExit()
+		return "", ErrNoTargetGiven
 	}
 
 	if app.Opts.DisableSSL {
@@ -398,7 +423,7 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	return target, nil
 }
 
-func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResult) []byte {
+func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResult) ([]byte, error) {
 	buf := &bytes.Buffer{}
 
 	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, findResult, time.Now().Add(time.Hour*1))
@@ -406,13 +431,13 @@ func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResu
 	app.Cache.SaveToFile()
 
 	if err := app.Download(asset.DownloadURL, buf); err != nil {
-		Fatal(fmt.Sprintf("%s (URL: %s)", err, asset.DownloadURL))
+		return []byte{}, fmt.Errorf("%s (URL: %s)", err, asset.DownloadURL)
 	}
 
 	repo.UpdateDownloadedAt(asset.DownloadURL)
 	app.Cache.SaveToFile()
 
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) verifiers.VerifyChecksumResult {
@@ -453,13 +478,16 @@ func (app *Application) ExtractBins(bin ExtractedFile, bins []ExtractedFile, ext
 		return len(bins)
 	}
 
-	app.extract(bin)
+	if err := app.extract(bin); err != nil {
+		app.WriteErrorLine("error: %v", err)
+		return 0
+	}
 
 	return 1
 
 }
 
-func (app *Application) extract(bin ExtractedFile) {
+func (app *Application) extract(bin ExtractedFile) error {
 	mode := bin.Mode()
 
 	// write the extracted file to a file on disk, in the --to directory if requested
@@ -488,10 +516,12 @@ func (app *Application) extract(bin ExtractedFile) {
 	}
 
 	if err := bin.Extract(out); err != nil {
-		Fatal(err)
+		return err
 	}
 
 	app.WriteLine("Extracted `%s` to `%s`", bin.ArchiveName, out)
+
+	return nil
 }
 
 // Determine the appropriate Finder to use. If a.Opts.URL is provided, we use
@@ -600,7 +630,7 @@ func (app *Application) getExtractor(asset *Asset, tool string) (extractor Extra
 // Would really like generics to implement this...
 // Make the user select one of the choices and return the index of the
 // selection.
-func (app *Application) userSelect(choices []interface{}) int {
+func (app *Application) userSelect(choices []interface{}) (int, error) {
 	for i, c := range choices {
 		app.WriteErrorLine("(%d) %v", i+1, c)
 	}
@@ -617,13 +647,13 @@ func (app *Application) userSelect(choices []interface{}) int {
 			break
 		}
 		if errors.Is(err, io.EOF) {
-			Fatal("Error reading selection")
+			return -1, fmt.Errorf("Error reading selection")
 		}
 
 		app.WriteErrorLine("Invalid selection: %v", err)
 	}
 
-	return choice
+	return choice, nil
 }
 
 func (app *Application) downloadConfigRepositories() error {
