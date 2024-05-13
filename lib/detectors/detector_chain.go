@@ -7,12 +7,12 @@ import (
 )
 
 type DetectorChain struct {
-	detectors []Detector
-	system    Detector
+	Detectors []Detector
+	System    Detector
 }
 
 func (dc *DetectorChain) Detect(assets []Asset) (DetectionResult, error) {
-	for _, d := range dc.detectors {
+	for _, d := range dc.Detectors {
 		detected, err := d.Detect(assets)
 		if len(detected.Candidates) == 0 && err != nil {
 			return DetectionResult{}, err
@@ -23,7 +23,7 @@ func (dc *DetectorChain) Detect(assets []Asset) (DetectionResult, error) {
 		assets = detected.Candidates
 	}
 
-	detected, err := dc.system.Detect(assets)
+	detected, err := dc.System.Detect(assets)
 	if len(detected.Candidates) == 0 && err != nil {
 		return DetectionResult{}, err
 	}

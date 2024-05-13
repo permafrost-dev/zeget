@@ -56,8 +56,8 @@ func DetermineCorrectDetector(opts *appflags.Flags, system *SystemDetector) (det
 	}
 
 	detector = &DetectorChain{
-		detectors: detectors,
-		system:    system,
+		Detectors: detectors,
+		System:    system,
 	}
 
 	return detector, err
