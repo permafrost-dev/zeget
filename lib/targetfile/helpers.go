@@ -31,7 +31,7 @@ func NewTargetFile(fs vfs.FS, file *os.File, filename string, shouldClose bool) 
 		Filename:    fn,
 		ShouldClose: shouldClose,
 		Err:         nil,
-		Fs:          &fs,
+		Fs:          fs,
 	}
 }
 

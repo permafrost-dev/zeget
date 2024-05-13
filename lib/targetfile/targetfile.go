@@ -14,7 +14,7 @@ type TargetFile struct {
 	Filename    *string
 	ShouldClose bool
 	Err         error
-	Fs          *vfs.FS
+	Fs          vfs.FS
 }
 
 // Cleanup closes the file if it should be closed and sets the file to nil.

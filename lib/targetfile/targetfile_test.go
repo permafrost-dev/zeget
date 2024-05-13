@@ -1,205 +1,195 @@
 package targetfile_test
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/permafrost-dev/eget/lib/targetfile"
+	"github.com/twpayne/go-vfs/v5"
+	"github.com/twpayne/go-vfs/v5/vfst"
 )
 
-func TestCleanup(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "targetfile_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tempFile.Name()) // clean up
+var fs vfs.FS
+var testFs *vfst.TestFS
+var tempFile *os.File
+var fsCleanup func()
 
-	filename := tempFile.Name()
-	tf := &targetfile.TargetFile{
-		File:        tempFile,
-		Filename:    &filename,
-		ShouldClose: true,
-	}
+var _ = Describe("TargetFile", func() {
+	BeforeEach(func() {
+		tempFileT := &vfst.File{
+			Contents: []byte("test"),
+			Perm:     0o644,
+		}
 
-	if err := tf.Cleanup(); err != nil {
-		t.Errorf("Cleanup failed: %v", err)
-	}
+		fs, fsCleanup, _ = vfst.NewTestFS(map[string]interface{}{
+			"/newfile.txt": tempFileT,
+		})
 
-	if tf.File != nil || tf.ShouldClose {
-		t.Errorf("Cleanup did not set File to nil or ShouldClose to false")
-	}
-}
+		testFs = fs.(*vfst.TestFS)
+		tempFile, _ = testFs.Create("/newfile2.txt")
+		tempFile.WriteString("test")
+		tempFile.Seek(0, 0)
+	})
 
-func TestWrite(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "targetfile_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tempFile.Name()) // clean up
+	AfterEach(func() {
+		tempFile.Close()
+		fsCleanup()
+	})
 
-	filename := tempFile.Name()
-	tf := &targetfile.TargetFile{
-		File:        tempFile,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
+	It("should cleanup a targetfile", func() {
+		filename := tempFile.Name()
+		tf := &targetfile.TargetFile{
+			File:        tempFile,
+			Filename:    &filename,
+			ShouldClose: true,
+			Fs:          fs,
+		}
 
-	data := []byte("hello world")
-	if err := tf.Write(data, false); err != nil {
-		t.Fatalf("Write failed: %v", err)
-	}
+		err := tf.Cleanup()
+		Expect(err).To(BeNil())
+		Expect(tf.File).To(BeNil())
+		Expect(tf.ShouldClose).To(BeFalse())
+	})
 
-	// Read back the data
-	tempFile.Seek(0, 0) // rewind to read the file
-	readData, err := io.ReadAll(tempFile)
-	if err != nil {
-		t.Fatalf("Failed to read back data: %v", err)
-	}
+	It("should write to a targetfile", func() {
+		filename := tempFile.Name()
+		tf := &targetfile.TargetFile{
+			File:        tempFile,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-	if !bytes.Equal(data, readData) {
-		t.Errorf("Written data and read data do not match. Got %s, want %s", readData, data)
-	}
-}
+		data := []byte("hello world")
+		err := tf.Write(data, false)
+		Expect(err).To(BeNil())
 
-func TestWriteWithError(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "targetfile_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tempFile.Name()) // clean up
+		// Read back the data
+		tempFile.Seek(0, 0) // rewind to read the file
+		readData, err := io.ReadAll(tempFile)
+		Expect(err).To(BeNil())
+		Expect(data).To(Equal(readData))
+	})
 
-	filename := tempFile.Name()
-	tf := &targetfile.TargetFile{
-		File:        tempFile,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
+	It("should write with an error to a targetfile", func() {
+		filename := tempFile.Name()
+		tf := &targetfile.TargetFile{
+			File:        tempFile,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-	tf.WithError(fmt.Errorf("test error"))
+		tf.WithError(fmt.Errorf("test error"))
 
-	data := []byte("hello world")
-	if err := tf.Write(data, false); err == nil {
-		t.Fatalf("Expected error when writing with error, got nil")
-	}
+		data := []byte("hello world")
+		err := tf.Write(data, false)
+		Expect(err).ToNot(BeNil())
+		Expect(tf.Err).ToNot(BeNil())
+	})
 
-	if tf.Err == nil {
-		t.Errorf("Expected error to be set after writing with error, got nil")
-	}
-}
+	It("should write and cleanup a targetfile", func() {
+		filename := tempFile.Name()
+		tf := &targetfile.TargetFile{
+			File:        tempFile,
+			Filename:    &filename,
+			ShouldClose: true,
+			Fs:          fs,
+		}
 
-func TestWriteAndCleanup(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "targetfile_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	filename := tempFile.Name()
-	defer os.Remove(filename) // clean up
+		data := []byte("hello cleanup")
+		err := tf.Write(data, true)
+		Expect(err).To(BeNil())
 
-	tf := &targetfile.TargetFile{
-		File:        tempFile,
-		Filename:    &filename,
-		ShouldClose: true,
-	}
+		Expect(tf.File).To(BeNil())
+		Expect(tf.ShouldClose).To(BeFalse())
+	})
 
-	data := []byte("hello cleanup")
-	if err := tf.Write(data, true); err != nil {
-		t.Fatalf("Write failed: %v", err)
-	}
+	It("should not write to a nil file", func() {
+		filename := "nonexistent.file"
+		tf := &targetfile.TargetFile{
+			File:        nil,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-	if tf.File != nil || tf.ShouldClose {
-		t.Errorf("Cleanup after write did not set File to nil or ShouldClose to false")
-	}
-}
+		err := tf.Write([]byte("data"), false)
+		Expect(err).ToNot(BeNil())
+	})
 
-func TestNoFileWrite(t *testing.T) {
-	filename := "nonexistent.file"
-	tf := &targetfile.TargetFile{
-		File:        nil,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
+	It("should check if a targetfile has a filename", func() {
+		filename := "nonexistent.file"
+		var tf *targetfile.TargetFile
 
-	err := tf.Write([]byte("data"), false)
-	if err == nil {
-		t.Errorf("Expected error when writing to a nil file, got nil")
-	}
-}
+		tf = &targetfile.TargetFile{
+			File:        nil,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-func TestHasFilename(t *testing.T) {
-	filename := "nonexistent.file"
-	var tf *targetfile.TargetFile
+		Expect(tf.HasFilename()).To(BeTrue())
 
-	tf = &targetfile.TargetFile{
-		File:        nil,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
+		tf = &targetfile.TargetFile{
+			File:        nil,
+			Filename:    nil,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-	if !tf.HasFilename() {
-		t.Errorf("Expected HasFilename to return true, got false")
-	}
+		Expect(tf.HasFilename()).To(BeFalse())
+	})
 
-	tf = &targetfile.TargetFile{
-		File:        nil,
-		Filename:    nil,
-		ShouldClose: false,
-	}
+	It("should get the name of a targetfile", func() {
+		var tf *targetfile.TargetFile
+		filename := "nonexistent.file"
+		tf = &targetfile.TargetFile{
+			File:        nil,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
+		Expect(tf.Name()).To(Equal(filename))
 
-	if tf.HasFilename() {
-		t.Errorf("Expected HasFilename to return false, got true")
-	}
-}
+		tf = &targetfile.TargetFile{
+			File:        nil,
+			Filename:    nil,
+			ShouldClose: false,
+			Fs:          fs,
+		}
+		Expect(tf.Name()).To(Equal(""))
+	})
 
-func TestName(t *testing.T) {
-	var tf *targetfile.TargetFile
-	filename := "nonexistent.file"
-	tf = &targetfile.TargetFile{
-		File:        nil,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
-	if tf.Name() != filename {
-		t.Errorf("Expected Name() to return %s, got %s", filename, tf.Name())
-	}
+	It("should set an error on a targetfile", func() {
+		var tf *targetfile.TargetFile
+		err := io.EOF
+		tf = &targetfile.TargetFile{}
+		tf.WithError(err)
+		Expect(tf.Err).To(Equal(err))
+	})
 
-	tf = &targetfile.TargetFile{
-		File:        nil,
-		Filename:    nil,
-		ShouldClose: false,
-	}
-	if tf.Name() != "" {
-		t.Errorf("Expected Name() to return '', got %s", tf.Name())
-	}
-}
+	It("should not close a targetfile on cleanup", func() {
+		tempFile, err := os.CreateTemp("", "targetfile_test")
+		if err != nil {
+			Fail(fmt.Sprintf("Failed to create temp file: %v", err))
+		}
+		defer os.Remove(tempFile.Name()) // clean up
 
-func TestWithError(t *testing.T) {
-	var tf *targetfile.TargetFile
-	err := io.EOF
-	tf = &targetfile.TargetFile{}
-	tf.WithError(err)
-	if tf.Err != err {
-		t.Errorf("Expected error to be %v, got %v", err, tf.Err)
-	}
-}
+		filename := tempFile.Name()
+		tf := &targetfile.TargetFile{
+			File:        tempFile,
+			Filename:    &filename,
+			ShouldClose: false,
+			Fs:          fs,
+		}
 
-func TestShouldNotCloseCleanup(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "targetfile_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tempFile.Name()) // clean up
+		err = tf.Cleanup()
+		Expect(err).To(BeNil())
+	})
 
-	filename := tempFile.Name()
-	tf := &targetfile.TargetFile{
-		File:        tempFile,
-		Filename:    &filename,
-		ShouldClose: false,
-	}
-
-	if err := tf.Cleanup(); err != nil {
-		t.Errorf("Cleanup failed: %v", err)
-	}
-}
+})
