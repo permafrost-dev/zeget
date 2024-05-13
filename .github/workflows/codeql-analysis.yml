@@ -1,18 +1,17 @@
 name: 'CodeQL Analysis'
 
 on:
-  schedule: [ cron: '30 2 * * 1' ] # run every Monday at 2:30 UTC
-  push:
-    branches: [ main ]
-    paths-ignore:
-    - '**/*_test.go'
-    - './*.yaml'
-    - './*.yml'
-    - '*.md'
-    - 'tools/**'
-    - LICENSE
-
-  pull_request:
+  schedule: [ cron: '30 2 * * *' ] # run every day at 2:30 UTC
+  # push:
+  #   branches: [ main ]
+  #   paths-ignore:
+  #   - '**/*_test.go'
+  #   - './*.yaml'
+  #   - './*.yml'
+  #   - '*.md'
+  #   - 'tools/**'
+  #   - LICENSE
+  # pull_request:
 
 jobs:
   analyze:
