@@ -1,14 +1,17 @@
 package utilities
 
 import (
+	"errors"
 	"fmt"
 )
 
-type InvalidGitHubProjectURL = error
+type InvalidGitHubProjectURLError = error
 type InvalidGitHubProjectReference = error
 
-func NewInvalidGitHubProjectURLError(URL string) InvalidGitHubProjectURL {
-	return fmt.Errorf("Invalid GitHub URL: %s", URL)
+var InvalidGitHubProjectURL InvalidGitHubProjectURLError = errors.New("Invalid GitHub URL").(InvalidGitHubProjectURLError)
+
+func NewInvalidGitHubProjectURLError(_ string) InvalidGitHubProjectURLError {
+	return InvalidGitHubProjectURL
 }
 
 func NewInvalidGitHubProjectReferenceError(reference string) InvalidGitHubProjectReference {

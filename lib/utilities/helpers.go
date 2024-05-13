@@ -270,6 +270,11 @@ func ExtractToolNameFromURL(url string) string {
 	// This regex assumes that the tool name is followed by a version number and/or OS/architecture information.
 	re := regexp.MustCompile(`([^\/]+)-?v?[\d\.]*-?([\w]*-?[\w]*\.\w+)?`)
 
+	url = strings.TrimSuffix(url, "/")
+	if strings.Contains(url, "://") {
+		url = url[strings.LastIndex(url, "://")+3:]
+	}
+
 	// Extracting the basename of the URL
 	base := strings.TrimSuffix(url, "/")
 	base = base[strings.LastIndex(base, "/")+1:]
@@ -277,8 +282,8 @@ func ExtractToolNameFromURL(url string) string {
 	// Using regex to find matches
 	matches := re.FindStringSubmatch(base)
 
-	if len(matches) > 1 {
-		re2 := regexp.MustCompile(`^[a-zA-Z-]+`)
+	if !strings.ContainsRune(base, '.') && len(matches) > 1 {
+		re2 := regexp.MustCompile(`^[a-zA-Z0-9-]+`)
 		m2 := re2.FindStringSubmatch(matches[1])
 		foundName := strings.Trim(m2[0], "-")
 		return foundName

@@ -1,12 +1,14 @@
 package utilities_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/permafrost-dev/eget/lib/assets"
 	. "github.com/permafrost-dev/eget/lib/utilities"
 )
 
@@ -22,6 +24,20 @@ var _ = Describe("Helpers", func() {
 
 	AfterEach(func() {
 		os.RemoveAll(tempDir)
+	})
+
+	Describe("Cut", func() {
+		It("cuts a string before and after a separator", func() {
+			before, after, found := Cut("test string", " ")
+			Expect(found).To(BeTrue())
+			Expect(before).To(Equal("test"))
+			Expect(after).To(Equal("string"))
+		})
+
+		It("returns false if the separator is not found", func() {
+			_, _, found := Cut("test string", "x")
+			Expect(found).To(BeFalse())
+		})
 	})
 
 	Describe("Bintime", func() {
@@ -133,4 +149,101 @@ var _ = Describe("Helpers", func() {
 			Expect(IsExec(filePath, fi.Mode())).To(BeTrue())
 		})
 	})
+
+	It("determines if a file is definitely not an executable", func() {
+		var filePath string
+
+		filePath = filepath.Join(tempDir, "nonexecutable")
+		Expect(IsDefinitelyNotExec(filePath)).To(BeFalse())
+
+		filePath = filepath.Join(tempDir, "nonexecutable.deb")
+		Expect(IsDefinitelyNotExec(filePath)).To(BeTrue())
+
+		filePath = filepath.Join(tempDir, "nonexecutable.1")
+		Expect(IsDefinitelyNotExec(filePath)).To(BeTrue())
+
+		filePath = filepath.Join(tempDir, "nonexecutable.txt")
+		Expect(IsDefinitelyNotExec(filePath)).To(BeTrue())
+	})
+
+	It("determines if a file is executable", func() {
+		filePath := filepath.Join(tempDir, "executable")
+		err := os.WriteFile(filePath, []byte("#!/bin/bash\n"), 0755)
+		Expect(err).NotTo(HaveOccurred())
+		defer os.Remove(filePath)
+
+		fi, err := os.Stat(filePath)
+		Expect(err).NotTo(HaveOccurred())
+
+		//check executable bit
+		Expect(IsExec(filePath, fi.Mode())).To(BeTrue())
+
+		//check file extensions
+		Expect(IsExec(filePath+".exe", 0o644)).To(BeTrue())
+		Expect(IsExec(filePath+".appimage", 0o644)).To(BeTrue())
+		Expect(IsExec(filePath+".txt", 0o644)).To(BeFalse())
+	})
+
+	It("finds a checksum asset", func() {
+		assetList := []assets.Asset{
+			{Name: "file.sha256sum"},
+			{Name: "file.sha256"},
+			{Name: "file"},
+		}
+		Expect(FindChecksumAsset(assets.Asset{Name: "file"}, assetList)).To(Equal(assets.Asset{Name: "file.sha256sum"}))
+
+		assetList = []assets.Asset{
+			{Name: "file"},
+			{Name: "file.sha256"},
+			{Name: "file.sha256sum"},
+		}
+		Expect(FindChecksumAsset(assets.Asset{Name: "file"}, assetList)).To(Equal(assets.Asset{Name: "file.sha256"}))
+	})
+
+	It("Gets mode from file name", func() {
+		Expect(ModeFrom("file.deb", 0o644)).To(Equal(fs.FileMode(0o644)))
+		Expect(ModeFrom("file.1", 0o644)).To(Equal(fs.FileMode(0o644)))
+		Expect(ModeFrom("file.txt", 0o644)).To(Equal(fs.FileMode(0o644)))
+		Expect(ModeFrom("file", 0o644)).To(Equal(fs.FileMode(0o755)))
+		Expect(ModeFrom("file.exe", 0o644)).To(Equal(fs.FileMode(0o755)))
+	})
+
+	It("returns the filename to rename to", func() {
+		Expect(GetRename("file", "newname")).To(Equal("newname"))
+		Expect(GetRename("file.appimage", "newname")).To(Equal("file"))
+		Expect(GetRename("file.exe", "newname")).To(Equal("file.exe"))
+	})
+
+	Describe("SetIf", func() {
+		It("returns the second value if condition is true", func() {
+			Expect(SetIf(true, "11", "22")).To(Equal("22"))
+		})
+
+		It("returns the first value if condition is false", func() {
+			Expect(SetIf(false, "11", "22")).To(Equal("11"))
+		})
+	})
+
+	Describe("ExtractToolNameFromURL", func() {
+		It("extracts the tool name from a URL", func() {
+			Expect(ExtractToolNameFromURL("https://github.com/user1/toolname")).To(Equal("toolname"))
+			Expect(ExtractToolNameFromURL("https://github.com/abc/toolnamea/")).To(Equal("toolnamea"))
+			Expect(ExtractToolNameFromURL("https://github.com/abc/toolname2/")).To(Equal("toolname2"))
+			Expect(ExtractToolNameFromURL("https://github.com/")).To(Equal("Unknown"))
+		})
+	})
+
+	It("checks if an error is of a specific type", func() {
+		var err error
+		err = NewInvalidGitHubProjectURLError("test")
+
+		Expect(IsErrorOf(InvalidGitHubProjectURL, err)).To(BeTrue())
+	})
+
+	It("gets the current working directory", func() {
+		os.Chdir(tempDir)
+		wd := GetCurrentDirectory()
+		Expect(wd).To(Equal(tempDir))
+	})
+
 })
