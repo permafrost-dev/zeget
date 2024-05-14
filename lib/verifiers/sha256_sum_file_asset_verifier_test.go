@@ -64,4 +64,12 @@ var _ = Describe("Sha256SumFileAssetVerifier", func() {
 			})
 		})
 	})
+
+	It("should return a string representation of the verifier", func() {
+		Expect(verifier.String()).To(Equal("checksum verified with https://example.com/sha256sums.txt"))
+	})
+
+	It("should return the correct asset", func() {
+		Expect(verifier.GetAsset()).To(Equal(asset))
+	})
 })

@@ -84,4 +84,8 @@ var _ = Describe("Sha256AssetVerifier", func() {
 			Expect(newVerifier).ShouldNot(BeNil())
 		})
 	})
+
+	It("should return the correct asset", func() {
+		Expect(verifier.GetAsset()).To(Equal(&asset))
+	})
 })

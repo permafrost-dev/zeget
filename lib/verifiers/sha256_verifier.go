@@ -25,6 +25,7 @@ func NewSha256Verifier(client download.ClientContract, expectedHex string) (*Sha
 	return &Sha256Verifier{
 		client:   client,
 		Expected: expected,
+		Asset:    nil,
 	}, nil
 }
 

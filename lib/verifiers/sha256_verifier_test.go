@@ -67,4 +67,20 @@ var _ = Describe("Sha256Verifier", func() {
 			Expect(err).ToNot(BeNil())
 		})
 	})
+
+	It("should return a string representation of the verifier", func() {
+		expectedHex := sha256.Sum256([]byte("test"))
+		hexString := hex.EncodeToString(expectedHex[:])
+		v, _ := verifiers.NewSha256Verifier(mockClient, hexString)
+
+		Expect(v.String()).To(Equal("sha256:" + hexString))
+	})
+
+	It("should return the correct asset", func() {
+		expectedHex := sha256.Sum256([]byte("test"))
+		hexString := hex.EncodeToString(expectedHex[:])
+		v, _ := verifiers.NewSha256Verifier(mockClient, hexString)
+
+		Expect(v.GetAsset()).To(BeNil())
+	})
 })
