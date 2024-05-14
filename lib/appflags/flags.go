@@ -14,6 +14,7 @@ type Flags struct {
 	DLOnly        bool
 	UpgradeOnly   bool
 	Asset         []string
+	Sha256        bool
 	Hash          bool
 	Verify        string
 	Remove        bool
@@ -36,7 +37,8 @@ type CliFlags struct {
 	DLOnly        *bool     `short:"d" long:"download-only" description:"stop after downloading the asset (no extraction)"`
 	UpgradeOnly   *bool     `long:"upgrade-only" description:"only download if release is more recent than current version"`
 	Asset         *[]string `short:"a" long:"asset" description:"download a specific asset containing the given string; can be specified multiple times for additional filtering; use ^ for anti-match"`
-	Hash          *bool     `long:"sha256" description:"show the SHA-256 hash of the downloaded asset"`
+	Hash          *bool     `short:"H" long:"hash" description:"show the SHA-256 hash of the downloaded asset"`
+	Sha256        *bool     `long:"sha256" description:"show the SHA-256 hash of the downloaded asset"`
 	Verify        *string   `long:"verify-sha256" description:"verify the downloaded asset checksum against the one provided"`
 	Remove        *bool     `short:"r" long:"remove" description:"remove the given file from $EGET_BIN or the current directory"`
 	Version       bool      `short:"V" long:"version" description:"show version information"`

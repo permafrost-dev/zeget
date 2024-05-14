@@ -10,36 +10,39 @@ import (
 	"github.com/permafrost-dev/eget/lib/globals"
 	"github.com/permafrost-dev/eget/lib/home"
 	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/twpayne/go-vfs/v5"
 )
 
 type ConfigGlobal struct {
-	All          bool   `toml:"all"`
-	DownloadOnly bool   `toml:"download_only"`
-	File         string `toml:"file"`
-	GithubToken  string `toml:"github_token"`
-	Quiet        bool   `toml:"quiet"`
-	ShowHash     bool   `toml:"show_hash"`
-	Source       bool   `toml:"download_source"`
-	System       string `toml:"system"`
-	Target       string `toml:"target"`
-	UpgradeOnly  bool   `toml:"upgrade_only"`
+	All            bool   `toml:"all"`
+	DownloadOnly   bool   `toml:"download_only"`
+	File           string `toml:"file"`
+	GithubToken    string `toml:"github_token"`
+	Quiet          bool   `toml:"quiet"`
+	ShowHash       bool   `toml:"show_hash"`
+	Source         bool   `toml:"download_source"`
+	System         string `toml:"system"`
+	Target         string `toml:"target"`
+	UpgradeOnly    bool   `toml:"upgrade_only"`
+	RemoveExisting bool   `toml:"remove_existing"`
 }
 
 type ConfigRepository struct {
-	All          bool     `toml:"all"`
-	AssetFilters []string `toml:"asset_filters"`
-	DownloadOnly bool     `toml:"download_only"`
-	File         string   `toml:"file"`
-	Name         string   `toml:"name"`
-	Quiet        bool     `toml:"quiet"`
-	ShowHash     bool     `toml:"show_hash"`
-	Source       bool     `toml:"download_source"`
-	System       string   `toml:"system"`
-	Tag          string   `toml:"tag"`
-	Target       string   `toml:"target"`
-	UpgradeOnly  bool     `toml:"upgrade_only"`
-	Verify       string   `toml:"verify_sha256"`
-	DisableSSL   bool     `toml:"disable_ssl"`
+	All            bool     `toml:"all"`
+	AssetFilters   []string `toml:"asset_filters"`
+	DownloadOnly   bool     `toml:"download_only"`
+	File           string   `toml:"file"`
+	Name           string   `toml:"name"`
+	Quiet          bool     `toml:"quiet"`
+	ShowHash       bool     `toml:"show_hash"`
+	Source         bool     `toml:"download_source"`
+	System         string   `toml:"system"`
+	Tag            string   `toml:"tag"`
+	Target         string   `toml:"target"`
+	UpgradeOnly    bool     `toml:"upgrade_only"`
+	Verify         string   `toml:"verify_sha256"`
+	DisableSSL     bool     `toml:"disable_ssl"`
+	RemoveExisting bool     `toml:"remove_existing"`
 }
 
 type Config struct {
@@ -104,6 +107,22 @@ func GetOSConfigPath(homePath string) string {
 	}
 
 	return BuildConfigurationFilename(configDir)
+}
+
+func GetCacheFilename(v vfs.FS) string {
+	homePath, _ := os.UserHomeDir()
+	configPath := homePath
+	// configPath := GetOSConfigPath(homePath)
+
+	v.Mkdir(configPath, 0755)
+	fn := filepath.Join(configPath, "."+globals.ApplicationName+".cache.json")
+	if !utilities.IsLocalFile(fn) {
+		f, _ := v.Create(fn)
+		f.WriteString("{}")
+		defer f.Close()
+	}
+
+	return fn
 }
 
 func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (*Config, error) {
@@ -172,6 +191,10 @@ func (app *Application) initializeConfig() {
 	config.Global.ShowHash = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "show_hash"), config.Global.ShowHash, false)
 	config.Global.UpgradeOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "upgrade_only"), config.Global.UpgradeOnly, false)
 	config.Global.Target = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "target"), config.Global.Target, utilities.GetCurrentDirectory())
+	config.Global.RemoveExisting = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "remove_existing"), config.Global.RemoveExisting, false)
+
+	// ensure "~" in the target directory is expanded
+	config.Global.Target, _ = home.Expand(config.Global.Target)
 
 	// set default repository values
 	for name, repo := range config.Repositories {
@@ -183,6 +206,10 @@ func (app *Application) initializeConfig() {
 		repo.Target = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "target"), repo.Target, config.Global.Target)
 		repo.UpgradeOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "upgrade_only"), repo.UpgradeOnly, config.Global.UpgradeOnly)
 		repo.Source = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "download_source"), repo.Source, config.Global.Source)
+		repo.RemoveExisting = utilities.SetIf(!config.Meta.MetaData.IsDefined(name, "remove_existing"), repo.RemoveExisting, config.Global.RemoveExisting)
+
+		// ensure "~" in the target directory is expanded
+		repo.Target, _ = home.Expand(repo.Target)
 
 		config.Repositories[name] = repo
 	}
@@ -194,6 +221,15 @@ func update[T any](config T, cli *T) T {
 	if cli == nil {
 		return config
 	}
+
+	//check if the cli flag is a string using types:
+	var s interface{} = *cli
+	if _, ok := s.(string); ok {
+		expanded, _ := home.Expand(s.(string))
+		var result interface{} = expanded
+		return result.(T)
+	}
+
 	return *cli
 }
 
@@ -207,12 +243,8 @@ func (app *Application) SetGlobalOptionsFromConfig() error {
 	app.Opts.Tag = update("", app.cli.Tag)
 	app.Opts.Prerelease = update(false, app.cli.Prerelease)
 	app.Opts.Source = update(app.Config.Global.Source, app.cli.Source)
-	targ, err := home.Expand(app.Config.Global.Target)
-	if err != nil {
-		return err
-	}
-
-	app.Opts.Output = update(targ, app.cli.Output)
+	//targ, err := home.Expand(app.Config.Global.Target)
+	app.Opts.Output = update(app.Config.Global.Target, app.cli.Output)
 	app.Opts.System = update(app.Config.Global.System, app.cli.System)
 	app.Opts.ExtractFile = update("", app.cli.ExtractFile)
 	app.Opts.All = update(app.Config.Global.All, app.cli.All)
@@ -220,9 +252,10 @@ func (app *Application) SetGlobalOptionsFromConfig() error {
 	app.Opts.DLOnly = update(app.Config.Global.DownloadOnly, app.cli.DLOnly)
 	app.Opts.UpgradeOnly = update(app.Config.Global.UpgradeOnly, app.cli.UpgradeOnly)
 	app.Opts.Asset = update([]string{}, app.cli.Asset)
-	app.Opts.Hash = update(app.Config.Global.ShowHash, app.cli.Hash)
+	app.Opts.Sha256 = update(app.Config.Global.ShowHash, app.cli.Sha256)
+	app.Opts.Hash = update(app.Config.Global.ShowHash, app.cli.Hash) || app.Opts.Sha256
 	app.Opts.Verify = update("", app.cli.Verify)
-	app.Opts.Remove = update(false, app.cli.Remove)
+	app.Opts.Remove = update(app.Config.Global.RemoveExisting, app.cli.Remove)
 	app.Opts.DisableSSL = update(false, app.cli.DisableSSL)
 
 	return nil
@@ -238,12 +271,16 @@ func (app *Application) SetProjectOptionsFromConfig(projectName string) error {
 		app.Opts.Asset = update(repo.AssetFilters, app.cli.Asset)
 		app.Opts.DLOnly = update(repo.DownloadOnly, app.cli.DLOnly)
 		app.Opts.ExtractFile = update(repo.File, app.cli.ExtractFile)
-		app.Opts.Hash = update(repo.ShowHash, app.cli.Hash)
-		targ, err := home.Expand(repo.Target)
-		if err != nil {
-			return err
+		app.Opts.Sha256 = update(repo.ShowHash, app.cli.Sha256)
+
+		if repo.Target != "" {
+			targ, err := home.Expand(repo.Target)
+			if err != nil {
+				targ = repo.Target
+			}
+			app.Opts.Output = update(targ, app.cli.Output)
 		}
-		app.Opts.Output = update(targ, app.cli.Output)
+
 		app.Opts.Quiet = update(repo.Quiet, app.cli.Quiet)
 		app.Opts.Source = update(repo.Source, app.cli.Source)
 		app.Opts.System = update(repo.System, app.cli.System)
