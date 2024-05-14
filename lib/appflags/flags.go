@@ -1,6 +1,6 @@
 package appflags
 
-import "github.com/permafrost-dev/eget/lib/filters"
+import "github.com/permafrost-dev/zeget/lib/filters"
 
 type Flags struct {
 	Tag           string

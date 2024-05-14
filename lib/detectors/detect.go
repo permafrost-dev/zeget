@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/permafrost-dev/eget/lib/appflags"
-	. "github.com/permafrost-dev/eget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/appflags"
+	. "github.com/permafrost-dev/zeget/lib/assets"
 )
 
 // A Detector selects an asset from a list of possibilities.

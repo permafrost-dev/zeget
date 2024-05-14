@@ -3,7 +3,7 @@ package extraction
 import (
 	"io/fs"
 
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 // An ExtractedFile contains the data, name, and permissions of a file in the archive.

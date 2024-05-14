@@ -3,7 +3,7 @@ package archives
 import (
 	"archive/tar"
 
-	"github.com/permafrost-dev/eget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/files"
 )
 
 func TarFileType(typ byte) files.FileType {

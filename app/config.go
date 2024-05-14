@@ -7,9 +7,9 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/permafrost-dev/eget/lib/globals"
-	"github.com/permafrost-dev/eget/lib/home"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/globals"
+	"github.com/permafrost-dev/zeget/lib/home"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 	"github.com/twpayne/go-vfs/v5"
 )
 

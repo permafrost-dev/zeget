@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/permafrost-dev/eget/app"
+	"github.com/permafrost-dev/zeget/app"
 )
 
 func main() {

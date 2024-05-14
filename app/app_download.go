@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/permafrost-dev/eget/lib/home"
+	"github.com/permafrost-dev/zeget/lib/home"
 	pb "github.com/schollz/progressbar/v3"
 )
 
@@ -29,6 +29,9 @@ func tokenFrom(s string) (string, error) {
 var ErrNoToken = errors.New("no github token")
 
 func getGithubToken() (string, error) {
+	if os.Getenv("ZEGET_GITHUB_TOKEN") != "" {
+		return tokenFrom(os.Getenv("ZEGET_GITHUB_TOKEN"))
+	}
 	if os.Getenv("EGET_GITHUB_TOKEN") != "" {
 		return tokenFrom(os.Getenv("EGET_GITHUB_TOKEN"))
 	}

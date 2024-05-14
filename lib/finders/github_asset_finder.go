@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/download"
-	"github.com/permafrost-dev/eget/lib/github"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	. "github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/download"
+	"github.com/permafrost-dev/zeget/lib/github"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 // A GithubAssetFinder finds assets for the given Repo at the given tag. Tags

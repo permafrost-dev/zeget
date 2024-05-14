@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 type MessageReporter struct {

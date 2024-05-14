@@ -5,9 +5,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/permafrost-dev/eget/lib/appflags"
-	. "github.com/permafrost-dev/eget/lib/assets"
-	. "github.com/permafrost-dev/eget/lib/detectors"
+	"github.com/permafrost-dev/zeget/lib/appflags"
+	. "github.com/permafrost-dev/zeget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/detectors"
 )
 
 func TestAllDetector_Detect(t *testing.T) {

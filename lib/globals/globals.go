@@ -1,7 +1,7 @@
 package globals
 
 const (
-	ApplicationName       = "eget"
+	ApplicationName       = "zeget"
 	ApplicationRepository = "permafrost-dev/" + ApplicationName
 )
 

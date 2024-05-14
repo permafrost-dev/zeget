@@ -1,4 +1,4 @@
-module github.com/permafrost-dev/eget
+module github.com/permafrost-dev/zeget
 
 go 1.21
 

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	ulid "github.com/oklog/ulid/v2"
-	"github.com/permafrost-dev/eget/lib/finders"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/finders"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 type Cache struct {

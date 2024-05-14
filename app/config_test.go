@@ -7,8 +7,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/permafrost-dev/eget/app"
-	. "github.com/permafrost-dev/eget/lib/globals"
+	. "github.com/permafrost-dev/zeget/app"
+	. "github.com/permafrost-dev/zeget/lib/globals"
 )
 
 var _ = Describe("Config", func() {

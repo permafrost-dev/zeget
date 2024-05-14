@@ -2,13 +2,14 @@ package app
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/permafrost-dev/eget/lib/assets"
-	. "github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/detectors"
-	"github.com/permafrost-dev/eget/lib/reporters"
-	"github.com/permafrost-dev/eget/lib/utilities"
-	. "github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/detectors"
+	"github.com/permafrost-dev/zeget/lib/reporters"
+	"github.com/permafrost-dev/zeget/lib/utilities"
+	. "github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 func (app *Application) Run() *ReturnStatus {
@@ -29,6 +30,10 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	app.RefreshRateLimit()
+	if err := app.RateLimitExceeded(); err != nil {
+		app.WriteErrorLine("GitHub rate limit exceeded. It resets at %s.", app.Cache.Data.RateLimit.Reset.Format(time.RFC1123))
+		return NewReturnStatus(FatalError, nil, fmt.Sprintf("error: %v", err))
+	}
 
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)

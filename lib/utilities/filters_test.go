@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/permafrost-dev/eget/lib/utilities"
+	. "github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 var _ = Describe("Filters", func() {

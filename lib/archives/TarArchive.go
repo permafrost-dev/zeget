@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/permafrost-dev/eget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/files"
 )
 
 type TarArchive struct {

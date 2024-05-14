@@ -14,19 +14,19 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	. "github.com/permafrost-dev/eget/lib/appflags"
-	. "github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/data"
-	"github.com/permafrost-dev/eget/lib/download"
-	. "github.com/permafrost-dev/eget/lib/extraction"
-	"github.com/permafrost-dev/eget/lib/filters"
-	"github.com/permafrost-dev/eget/lib/finders"
-	"github.com/permafrost-dev/eget/lib/github"
-	. "github.com/permafrost-dev/eget/lib/globals"
-	"github.com/permafrost-dev/eget/lib/home"
-	"github.com/permafrost-dev/eget/lib/utilities"
-	. "github.com/permafrost-dev/eget/lib/utilities"
-	"github.com/permafrost-dev/eget/lib/verifiers"
+	. "github.com/permafrost-dev/zeget/lib/appflags"
+	. "github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/data"
+	"github.com/permafrost-dev/zeget/lib/download"
+	. "github.com/permafrost-dev/zeget/lib/extraction"
+	"github.com/permafrost-dev/zeget/lib/filters"
+	"github.com/permafrost-dev/zeget/lib/finders"
+	"github.com/permafrost-dev/zeget/lib/github"
+	. "github.com/permafrost-dev/zeget/lib/globals"
+	"github.com/permafrost-dev/zeget/lib/home"
+	"github.com/permafrost-dev/zeget/lib/utilities"
+	. "github.com/permafrost-dev/zeget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/verifiers"
 	"github.com/twpayne/go-vfs/v5"
 )
 
@@ -150,7 +150,7 @@ func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *fi
 		finding.Tool,
 		app.Opts.Asset,
 		findResult,
-		time.Now().Add(time.Hour*48),
+		time.Now().Add(time.Hour*24*7),
 	)
 }
 
@@ -223,7 +223,33 @@ func (app *Application) selectFromMultipleCandidates(bin ExtractedFile, bins []E
 	return bin, nil
 }
 
+func (app *Application) RateLimitExceeded() error {
+	if app.Cache.Data.RateLimit.Remaining < 10 {
+		return errors.New("GitHub rate limit exceeded")
+	}
+
+	return nil
+}
+
 func (app *Application) RefreshRateLimit() error {
+	//diff in minutes between the current time and the rate limit reset time:
+	diff := app.Cache.Data.RateLimit.Reset.Sub(time.Now().Local()).Round(time.Second).Seconds() / 60
+
+	// not a percentage per se, but the rate limit remaining divided by the number of minutes until the rate limit resets
+	// provides a rough estimate of the rate of requests that can be made per minute until the rate limit resets.
+	rate := int64(app.Cache.Data.RateLimit.Remaining) / int64(diff)
+
+	// fmt.Printf("Rate limit reset in %v ,minutes\n", diff)
+	// fmt.Printf("Remaining rate limit: %d\n", app.Cache.Data.RateLimit.Remaining)
+	// fmt.Printf("Total rate limit: %d\n", rate)
+
+	// if rate is <50, always refresh the rate limit
+	if app.Cache.Data.RateLimit.Reset != nil && rate > 50 {
+		if app.Cache.Data.RateLimit.Reset.After(time.Now().Local()) {
+			return errors.New("rate limit has not reset")
+		}
+	}
+
 	rateLimitDate, err := github.FetchRateLimit(app.DownloadClient())
 
 	if err == nil {

@@ -1,6 +1,6 @@
 package detectors
 
-import "github.com/permafrost-dev/eget/lib/assets"
+import "github.com/permafrost-dev/zeget/lib/assets"
 
 type DetectionResult struct {
 	Asset      assets.Asset

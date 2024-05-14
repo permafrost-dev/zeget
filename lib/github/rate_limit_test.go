@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/download"
-	"github.com/permafrost-dev/eget/lib/github"
-	"github.com/permafrost-dev/eget/lib/mockhttp"
+	"github.com/permafrost-dev/zeget/lib/download"
+	"github.com/permafrost-dev/zeget/lib/github"
+	"github.com/permafrost-dev/zeget/lib/mockhttp"
 )
 
 var _ = Describe("RateLimit", func() {

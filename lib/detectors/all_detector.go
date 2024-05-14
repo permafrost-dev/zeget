@@ -3,7 +3,7 @@ package detectors
 import (
 	"fmt"
 
-	. "github.com/permafrost-dev/eget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/assets"
 )
 
 // AllDetector matches every asset. If there is only one asset, it is returned

@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/reporters"
+	"github.com/permafrost-dev/zeget/lib/reporters"
 )
 
 var _ = Describe("MessageReporter", func() {

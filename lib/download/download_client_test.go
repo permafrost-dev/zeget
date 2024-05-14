@@ -14,7 +14,7 @@ import (
 
 	// "testing"
 
-	. "github.com/permafrost-dev/eget/lib/download"
+	. "github.com/permafrost-dev/zeget/lib/download"
 )
 
 type MockHTTPRequestData struct {

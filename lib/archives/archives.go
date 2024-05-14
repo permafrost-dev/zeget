@@ -3,7 +3,7 @@ package archives
 import (
 	"io"
 
-	"github.com/permafrost-dev/eget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/files"
 )
 
 type ArchiveFunc func(data []byte, decomp DecompressFunc) (Archive, error)
