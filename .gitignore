@@ -1,6 +1,8 @@
 
 # ignore ginkgo bootstrap files in lib/** dirs
 lib/**/*_suite_test.go
+app/app_suite_test.go
+
 eget_suite_test.go
 ginkgo.xml
 test_cache.json
