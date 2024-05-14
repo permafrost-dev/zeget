@@ -12,7 +12,7 @@ on:
 
 env:
   GO_VERSION: "~1.22"
-  GO111MODULE: "off"
+  GO111MODULE: "on"
 
 jobs:
   test-build:
@@ -77,15 +77,15 @@ jobs:
             ${{ runner.os }}-go-
         
       - name: Install ginkgo
-        run: go install github.com/onsi/ginkgo/v2
+        run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: generate ginkgo bootstrap files
         run: task ginkgo-bootstrap
           
       - name: Run unit tests with coverage
         working-directory: ${{ github.workspace }}
-        # env:
-        #   GINKGO_PRESERVE_CACHE: "true" 
+        env:
+          GINKGO_PRESERVE_CACHE: "true" 
         run: ginkgo -cover -r -v ./app ./lib/... 
         #go test -coverprofile ./coverprofile.out -v ./lib/** ./app
 
