@@ -86,7 +86,8 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           GINKGO_PRESERVE_CACHE: "true" 
-        run: go test -coverprofile ./coverprofile.out -v ./lib/** ./app
+        run: ginkgo -cover -r -v ./app ./lib/... 
+        #go test -coverprofile ./coverprofile.out -v ./lib/** ./app
 
       - name: Upload coverage reports to Codecov
         if: ${{success()}}

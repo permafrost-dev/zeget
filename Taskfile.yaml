@@ -122,9 +122,11 @@ tasks:
     label: ginkgo
     ignore_error: true
     generates:
+      - ./eget_suite_test.go
       - ./lib/**/*_suite_test.go
       - ./app/app_suite_test.go
     cmds:
+      - gingko bootstrap
       - sh -c '/bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash'
       - sh -c 'cd app && ginkgo bootstrap; cd ..'
 
