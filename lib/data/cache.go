@@ -98,6 +98,10 @@ func (c *Cache) AddRepository(name, target string, filters []string, findResult 
 		LastCheckAt: time.Now(),
 	}
 
+	if len(findResult.Assets) > 0 {
+		entry.LastReleaseDate = findResult.Assets[0].ReleaseDate
+	}
+
 	c.Set(entry.Name, &entry)
 	c.SaveToFile()
 

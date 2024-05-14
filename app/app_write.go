@@ -2,10 +2,33 @@ package app
 
 import (
 	"fmt"
+	"reflect"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
+var checkMarkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#1bef52")).Bold(true)
+var filenameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#efe51b"))
+var fadedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#fffff"))
+
 func (app *Application) Write(format string, args ...any) (n int, err error) {
-	return fmt.Fprintf(app.Output, format, args...)
+	temp := []interface{}{}
+	var style *lipgloss.Style = nil
+
+	for _, arg := range args {
+		if reflect.TypeOf(arg).Kind() == reflect.TypeOf(filenameStyle).Kind() {
+			s := arg.(lipgloss.Style)
+			style = &s
+			continue
+		}
+		temp = append(temp, arg)
+	}
+
+	if style != nil {
+		format = style.Render(format)
+	}
+
+	return fmt.Fprintf(app.Output, format, temp...)
 }
 
 func (app *Application) WriteLine(format string, args ...any) (n int, err error) {
@@ -34,6 +57,14 @@ func (app *Application) WriteError(format string, args ...any) {
 
 func (app *Application) WriteErrorLine(format string, args ...any) {
 	app.WriteError(format+"\n", args...)
+}
+
+func (app *Application) WriteCheck(newLine bool) {
+	if newLine {
+		app.WriteLine(checkMarkStyle.Render("✔ "))
+	} else {
+		app.Write(checkMarkStyle.Render("✔ "))
+	}
 }
 
 func (app *Application) initOutputs() {

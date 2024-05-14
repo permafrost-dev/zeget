@@ -30,7 +30,7 @@ var ErrNoToken = errors.New("no github token")
 
 func getGithubToken() (string, error) {
 	if os.Getenv("ZEGET_GITHUB_TOKEN") != "" {
-		return tokenFrom(os.Getenv("ZEGET_GITHUB_TOKEN"))
+		return tokenFrom(os.Getenv("EGET_GITHUB_TOKEN"))
 	}
 	if os.Getenv("EGET_GITHUB_TOKEN") != "" {
 		return tokenFrom(os.Getenv("EGET_GITHUB_TOKEN"))
@@ -61,6 +61,7 @@ func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
 		pb.OptionOnCompletion(func() {
 			fmt.Fprint(pbout, "\n")
 		}),
+		pb.OptionUseANSICodes(true),
 		pb.OptionSetTheme(pb.Theme{
 			Saucer:        "=",
 			SaucerHead:    ">",

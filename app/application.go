@@ -233,11 +233,14 @@ func (app *Application) RateLimitExceeded() error {
 
 func (app *Application) RefreshRateLimit() error {
 	//diff in minutes between the current time and the rate limit reset time:
-	diff := app.Cache.Data.RateLimit.Reset.Sub(time.Now().Local()).Round(time.Second).Seconds() / 60
+	var rate int64 = 10
 
-	// not a percentage per se, but the rate limit remaining divided by the number of minutes until the rate limit resets
-	// provides a rough estimate of the rate of requests that can be made per minute until the rate limit resets.
-	rate := int64(app.Cache.Data.RateLimit.Remaining) / int64(diff)
+	if app.Cache.Data.RateLimit.Reset != nil {
+		diff := app.Cache.Data.RateLimit.Reset.Sub(time.Now().Local()).Round(time.Second).Seconds() / 60
+		// not a percentage per se, but the rate limit remaining divided by the number of minutes until the rate limit resets
+		// provides a rough estimate of the rate of requests that can be made per minute until the rate limit resets.
+		rate = int64(app.Cache.Data.RateLimit.Remaining) / int64(diff)
+	}
 
 	// fmt.Printf("Rate limit reset in %v ,minutes\n", diff)
 	// fmt.Printf("Remaining rate limit: %d\n", app.Cache.Data.RateLimit.Remaining)
@@ -372,6 +375,7 @@ func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResu
 	}
 
 	repo.UpdateDownloadedAt(asset.DownloadURL)
+	repo.UpdateReleaseDate(asset.ReleaseDate)
 
 	return buf.Bytes(), nil
 }
@@ -381,7 +385,7 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 	needsNewLine := false
 
 	if verifier != nil && verifier.String() != (verifiers.NoVerifier{}).String() {
-		app.Write("› performing verification for %s...", wrapper.Asset.Name)
+		app.Write("› " + "validating checksums for " + filenameStyle.Render(wrapper.Asset.Name) + "...")
 		needsNewLine = true
 	}
 
@@ -396,12 +400,14 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 	}
 
 	if app.Opts.Verify == "" && sumAsset.Name != "" {
-		app.WriteLine("verified ✔")
+		app.Write("passed ")
+		app.WriteCheck(true)
 		return verifiers.VerifyChecksumSuccess
 	}
 
 	if app.Opts.Verify != "" {
-		app.WriteLine("verified ✔")
+		app.Write("passed ")
+		app.WriteCheck(true)
 		return verifiers.VerifyChecksumSuccess
 	}
 
@@ -461,7 +467,8 @@ func (app *Application) extract(bin ExtractedFile) error {
 		return err
 	}
 
-	app.WriteLine("› extracted `%s` to `%s` ✔", bin.ArchiveName, home.NewPathCompactor().Compact(out))
+	app.Write("› extracted `%s` to `%s` ", filenameStyle.Render(bin.ArchiveName), filenameStyle.Render(home.NewPathCompactor().Compact(out)))
+	app.WriteCheck(true)
 
 	return nil
 }

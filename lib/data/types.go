@@ -67,6 +67,14 @@ func (rce *RepositoryCacheEntry) UpdateCheckedAt() {
 	}
 }
 
+func (rce *RepositoryCacheEntry) UpdateReleaseDate(date time.Time) {
+	rce.LastReleaseDate = date
+
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
+}
+
 func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {
 	rce.LastDownloadAt = time.Now().Local()
 	rce.LastDownloadTag = tag

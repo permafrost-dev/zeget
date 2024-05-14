@@ -89,7 +89,7 @@ func (app *Application) Run() *ReturnStatus {
 
 	assetWrapper.Asset = &asset
 
-	app.WriteLine("› downloading %s...", assetWrapper.Asset.DownloadURL) // print the URL
+	app.WriteLine("› " + "downloading " + assetWrapper.Asset.DownloadURL + "...") // print the URL
 
 	body, err := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	if err != nil {
@@ -103,6 +103,7 @@ func (app *Application) Run() *ReturnStatus {
 
 	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
 	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateDownloadedAt(tagDownloaded)
+	// app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateReleaseDate(asset.ReleaseDate)
 
 	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
 	if err != nil {
