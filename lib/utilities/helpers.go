@@ -227,7 +227,7 @@ func GetCurrentDirectory() string {
 }
 
 // check if two interfaces implement the same type
-func SameImplementedInterface(a, b interface{}) bool {
+func SameImplementedInterface(a, b any) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 

@@ -161,7 +161,7 @@ func (app *Application) Run() *ReturnStatus {
 	app.VerifyChecksums(assetWrapper, body)
 
 	if app.Opts.Hash {
-		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Outputs.Stdout).Report(string(body))
+		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Output).Report(string(body))
 	}
 
 	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
@@ -219,7 +219,7 @@ func (app *Application) shouldReturn(err error) (bool, *ReturnStatus) {
 
 	// remote asset is not a newer version than the current version
 	if IsErrorOf(err, finders.ErrNoUpgrade) {
-		return true, NewReturnStatus(Success, nil, fmt.Sprintf("%s: %v", app.Target, err))
+		return true, NewReturnStatus(Success, finders.ErrNoUpgrade, fmt.Sprintf("%s: %v", app.Target, err))
 	}
 
 	// some other error occurred
@@ -442,13 +442,15 @@ func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResu
 
 func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) verifiers.VerifyChecksumResult {
 	verifier, sumAsset, err := app.getVerifier(*wrapper.Asset, wrapper.Assets)
+	needsNewLine := false
 
-	if verifier != nil && !utilities.SameImplementedInterface(verifier, verifiers.NoVerifier{}) {
+	if verifier != nil && verifier.String() != (verifiers.NoVerifier{}).String() {
 		app.Write("› performing verification for %s...", wrapper.Asset.Name)
+		needsNewLine = true
 	}
 
 	if err != nil {
-		app.WriteLine("Checksum verification failed, could not create a verifier.")
+		app.WriteLine("failed, could not create a verifier.")
 		return verifiers.VerifyChecksumFailedNoVerifier
 	}
 
@@ -465,6 +467,10 @@ func (app *Application) VerifyChecksums(wrapper *AssetWrapper, body []byte) veri
 	if app.Opts.Verify != "" {
 		app.WriteLine("verified ✔")
 		return verifiers.VerifyChecksumSuccess
+	}
+
+	if needsNewLine {
+		app.WriteLine("skipped")
 	}
 
 	return verifiers.VerifyChecksumNone
@@ -575,7 +581,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 
 	for _, item := range assets {
 		if item.Name == asset.Name+".sha256sum" || item.Name == asset.Name+".sha256" {
-			app.WriteLine("verification against %s (%s)", item.Name, item.DownloadURL)
+			app.WriteVerboseLine("verification against %s (%s)", item.Name, item.DownloadURL)
 
 			verifier := verifiers.Sha256AssetVerifier{AssetURL: item.DownloadURL}
 			verifier.WithClient(app.DownloadClient())
@@ -588,7 +594,7 @@ func (app *Application) getVerifier(asset Asset, assets []Asset) (verifier verif
 				return nil, item, fmt.Errorf("extract binary name from asset url: %s: %w", asset, err)
 			}
 			binaryName := path.Base(binaryURL.Path)
-			app.WriteLine("› performing checksum verifications against %s (%s)", item.Name, item.DownloadURL)
+			app.WriteVerboseLine("› performing checksum verifications against %s (%s)", item.Name, item.DownloadURL)
 			return &verifiers.Sha256SumFileAssetVerifier{Sha256SumAssetURL: item.DownloadURL, BinaryName: binaryName, Client: download.NewClient("")}, item, nil
 		}
 	}
