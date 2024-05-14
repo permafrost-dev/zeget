@@ -228,6 +228,7 @@ target = "~/.local/bin"
 | `system` | `--system` | The target system to download for. | `all` |
 | `target` | `--to` | The directory to move the downloaded file to after extraction. | `.` |
 | `upgrade_only` | `--upgrade-only` | Whether to only download if release is more recent than current version. | `false` |
+| `ignore_patterns` | `N/A` | An array of regular expressions to always ignore when detecting candidates for selection or extraction. | `[]` |
 
 ## Available settings - repository sections
 
@@ -254,6 +255,7 @@ target = "~/.local/bin"
     show_hash = false
     upgrade_only = true
     target = "/home/user1/bin"
+    ignore_patterns = ["(.sig|.pem|.apk)$", "musl", "static"]
 
 ["zyedidia/micro"]
     upgrade_only = false
