@@ -37,16 +37,16 @@ func NewSystemDetector(sos, sarch string) (*SystemDetector, error) {
 // matches are returned as candidates. Otherwise all assets are returned as
 // candidates.
 func (d *SystemDetector) Detect(assets []Asset) (DetectionResult, error) {
-	var priority []Asset
-	var matches []Asset
-	var candidates []Asset
+	var priority = []Asset{}
+	var matches = []Asset{}
+	var candidates = []Asset{}
+
 	all := make([]Asset, 0, len(assets))
 	for _, a := range assets {
 		if strings.HasSuffix(a.Name, ".sha256") || strings.HasSuffix(a.Name, ".sha256sum") {
 			// skip checksums (they will be checked later by the verifier)
 			continue
 		}
-
 		os, extra := d.Os.Match(a.Name)
 		if extra {
 			priority = append(priority, a)
