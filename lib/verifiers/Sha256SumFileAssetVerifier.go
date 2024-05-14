@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"fmt"
-	"go/types"
 	"regexp"
 
 	"github.com/permafrost-dev/eget/lib/assets"
@@ -12,23 +11,22 @@ import (
 )
 
 type Sha256SumFileAssetVerifier struct {
-	Client            *download.Client
+	Client            download.ClientContract
 	Sha256SumAssetURL string
 	RealAssetURL      string
 	BinaryName        string
 	Asset             *assets.Asset
-	types.Type
+	Verifier
 }
 
 func (s256 *Sha256SumFileAssetVerifier) GetAsset() *assets.Asset {
 	return s256.Asset
 }
 
-func (s256 *Sha256SumFileAssetVerifier) WithClient(client *download.Client) *Verifier {
+func (s256 *Sha256SumFileAssetVerifier) WithClient(client download.ClientContract) Verifier {
 	s256.Client = client
 	var intf interface{} = s256
-	var result Verifier = intf.(Verifier)
-	return &result
+	return intf.(Verifier)
 }
 
 func (s256 *Sha256SumFileAssetVerifier) Verify(b []byte) error {

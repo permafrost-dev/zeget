@@ -18,7 +18,7 @@ const (
 
 type Verifier interface {
 	Verify(b []byte) error
-	WithClient(client *download.Client) *Verifier
+	WithClient(client download.ClientContract) Verifier
 	GetAsset() *assets.Asset
 	String() string
 	types.Type
