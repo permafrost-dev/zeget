@@ -84,8 +84,8 @@ jobs:
           
       - name: Run unit tests with coverage
         working-directory: ${{ github.workspace }}
-        env:
-          GINKGO_PRESERVE_CACHE: "true" 
+        # env:
+        #   GINKGO_PRESERVE_CACHE: "true" 
         run: ginkgo -cover -r -v ./app ./lib/... 
         #go test -coverprofile ./coverprofile.out -v ./lib/** ./app
 
