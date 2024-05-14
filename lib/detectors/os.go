@@ -4,66 +4,66 @@ import "regexp"
 
 // An OS represents a target operating system.
 type OS struct {
-	name     string
-	regex    *regexp.Regexp
-	anti     *regexp.Regexp
-	priority *regexp.Regexp // matches to priority are better than normal matches
+	Name     string
+	Regex    *regexp.Regexp
+	Anti     *regexp.Regexp
+	Priority *regexp.Regexp // matches to priority are better than normal matches
 }
 
 // Match returns true if the given archive name is likely to store a binary for
 // this OS. Also returns if this is a priority match.
 func (os *OS) Match(s string) (bool, bool) {
-	if os.anti != nil && os.anti.MatchString(s) {
+	if os.Anti != nil && os.Anti.MatchString(s) {
 		return false, false
 	}
-	if os.priority != nil {
-		return os.regex.MatchString(s), os.priority.MatchString(s)
+	if os.Priority != nil {
+		return os.Regex.MatchString(s), os.Priority.MatchString(s)
 	}
-	return os.regex.MatchString(s), false
+	return os.Regex.MatchString(s), false
 }
 
 var (
 	OSDarwin = OS{
-		name:  "darwin",
-		regex: regexp.MustCompile(`(?i)(darwin|mac.?(os)?|osx)`),
+		Name:  "darwin",
+		Regex: regexp.MustCompile(`(?i)(darwin|mac.?(os)?|osx)`),
 	}
 	OSWindows = OS{
-		name:  "windows",
-		regex: regexp.MustCompile(`(?i)([^r]win|windows)`),
+		Name:  "windows",
+		Regex: regexp.MustCompile(`(?i)([^r]win|windows)`),
 	}
 	OSLinux = OS{
-		name:     "linux",
-		regex:    regexp.MustCompile(`(?i)(linux|ubuntu)`),
-		anti:     regexp.MustCompile(`(?i)(android)`),
-		priority: regexp.MustCompile(`\.appimage$`),
+		Name:     "linux",
+		Regex:    regexp.MustCompile(`(?i)(linux|ubuntu)`),
+		Anti:     regexp.MustCompile(`(?i)(android)`),
+		Priority: regexp.MustCompile(`\.appimage$`),
 	}
 	OSNetBSD = OS{
-		name:  "netbsd",
-		regex: regexp.MustCompile(`(?i)(netbsd)`),
+		Name:  "netbsd",
+		Regex: regexp.MustCompile(`(?i)(netbsd)`),
 	}
 	OSFreeBSD = OS{
-		name:  "freebsd",
-		regex: regexp.MustCompile(`(?i)(freebsd)`),
+		Name:  "freebsd",
+		Regex: regexp.MustCompile(`(?i)(freebsd)`),
 	}
 	OSOpenBSD = OS{
-		name:  "openbsd",
-		regex: regexp.MustCompile(`(?i)(openbsd)`),
+		Name:  "openbsd",
+		Regex: regexp.MustCompile(`(?i)(openbsd)`),
 	}
 	OSAndroid = OS{
-		name:  "android",
-		regex: regexp.MustCompile(`(?i)(android)`),
+		Name:  "android",
+		Regex: regexp.MustCompile(`(?i)(android)`),
 	}
 	OSIllumos = OS{
-		name:  "illumos",
-		regex: regexp.MustCompile(`(?i)(illumos)`),
+		Name:  "illumos",
+		Regex: regexp.MustCompile(`(?i)(illumos)`),
 	}
 	OSSolaris = OS{
-		name:  "solaris",
-		regex: regexp.MustCompile(`(?i)(solaris)`),
+		Name:  "solaris",
+		Regex: regexp.MustCompile(`(?i)(solaris)`),
 	}
 	OSPlan9 = OS{
-		name:  "plan9",
-		regex: regexp.MustCompile(`(?i)(plan9)`),
+		Name:  "plan9",
+		Regex: regexp.MustCompile(`(?i)(plan9)`),
 	}
 )
 
