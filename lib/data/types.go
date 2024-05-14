@@ -62,9 +62,9 @@ func (ad *ApplicationData) SetRepositoryEntryByKey(key string, entry *Repository
 func (rce *RepositoryCacheEntry) UpdateCheckedAt() {
 	rce.LastCheckAt = time.Now()
 
-	// if rce.owner != nil {
-	// 	rce.owner.SaveToFile()
-	// }
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
 }
 
 func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {

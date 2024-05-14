@@ -24,6 +24,7 @@ import (
 	"github.com/permafrost-dev/eget/lib/finders"
 	"github.com/permafrost-dev/eget/lib/github"
 	. "github.com/permafrost-dev/eget/lib/globals"
+	"github.com/permafrost-dev/eget/lib/home"
 	"github.com/permafrost-dev/eget/lib/reporters"
 	"github.com/permafrost-dev/eget/lib/utilities"
 	. "github.com/permafrost-dev/eget/lib/utilities"
@@ -152,7 +153,7 @@ func (app *Application) Run() *ReturnStatus {
 
 	assetWrapper.Asset = &asset
 
-	app.WriteLine(assetWrapper.Asset.DownloadURL) // print the URL
+	app.WriteLine("› downloading %s...", assetWrapper.Asset.DownloadURL) // print the URL
 
 	body, err := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	if err != nil {
@@ -408,7 +409,7 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 		if err := os.Remove(fn); err != nil {
 			app.WriteErrorLine("%s", err.Error())
 		} else {
-			app.WriteLine("Removed `%s`", fn)
+			app.WriteLine("Removed `%s`", home.NewPathCompactor().Compact(fn))
 		}
 	}
 
@@ -419,6 +420,7 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	}
 
 	app.Opts.Verbose = app.cli.Verbose != nil && *app.cli.Verbose
+	app.Opts.NoProgress = app.cli.NoProgress != nil && *app.cli.NoProgress
 
 	return target, nil
 }
@@ -428,14 +430,12 @@ func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResu
 
 	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, findResult, time.Now().Add(time.Hour*1))
 	repo.UpdateCheckedAt()
-	app.Cache.SaveToFile()
 
 	if err := app.Download(asset.DownloadURL, buf); err != nil {
 		return []byte{}, fmt.Errorf("%s (URL: %s)", err, asset.DownloadURL)
 	}
 
 	repo.UpdateDownloadedAt(asset.DownloadURL)
-	app.Cache.SaveToFile()
 
 	return buf.Bytes(), nil
 }
@@ -525,7 +525,7 @@ func (app *Application) extract(bin ExtractedFile) error {
 		return err
 	}
 
-	app.WriteLine("Extracted `%s` to `%s`", bin.ArchiveName, out)
+	app.WriteLine("› extracted `%s` to `%s` ✔", bin.ArchiveName, home.NewPathCompactor().Compact(out))
 
 	return nil
 }

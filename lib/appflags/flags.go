@@ -18,6 +18,7 @@ type Flags struct {
 	DisableSSL    bool
 	NoInteraction bool
 	Verbose       bool
+	NoProgress    bool
 }
 
 type CliFlags struct {
@@ -41,4 +42,5 @@ type CliFlags struct {
 	DisableSSL    *bool     `short:"k" long:"disable-ssl" description:"disable SSL verification for download requests"`
 	NoInteraction bool      `long:"no-interaction" description:"do not prompt for user input"`
 	Verbose       *bool     `short:"v" long:"verbose" description:"show verbose output"`
+	NoProgress    *bool     `long:"no-progress" description:"do not show download progress"`
 }

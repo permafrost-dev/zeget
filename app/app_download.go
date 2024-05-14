@@ -39,8 +39,9 @@ func getGithubToken() (string, error) {
 }
 
 func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
-	var pbout io.Writer = app.Outputs.Stderr
-	if app.Opts.Quiet {
+	var pbout io.Writer = app.Output
+
+	if app.Opts.Quiet || app.Opts.NoProgress {
 		pbout = io.Discard
 	}
 
@@ -53,7 +54,7 @@ func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
 		pb.OptionShowCount(),
 		pb.OptionSpinnerType(14),
 		pb.OptionFullWidth(),
-		pb.OptionSetDescription("Downloading"),
+		pb.OptionSetDescription("› progress"),
 		pb.OptionOnCompletion(func() {
 			fmt.Fprint(pbout, "\n")
 		}),
