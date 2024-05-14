@@ -87,7 +87,7 @@ You can then place the downloaded binary in a location on your `$PATH` such as `
 
 To verify the script, use `sha256sum install.sh` after downloading; the sha256 checksum is:
 
-> <code data-id="installer-checksum">06a00722d5ffba35e37a84c5eae8c84d495a87329f847aacef1841b7c8433824</code><br>
+> <code data-id="installer-checksum">077d2431344eae1765039dfb8b3b4dff2efdd36677e5d49673dd0fe650d73e87</code><br>
 
 ### Pre-built binaries
 
