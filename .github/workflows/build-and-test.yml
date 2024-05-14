@@ -12,7 +12,7 @@ on:
 
 env:
   GO_VERSION: "~1.22"
-  GO111MODULE: "on"
+  GO111MODULE: "off"
 
 jobs:
   test-build:
