@@ -2,7 +2,7 @@
 
 # This script installs Eget.
 #
-# Quick install: `curl https://raw.githubusercontent.com/permafrost-dev/eget/scripts/install.sh | bash`
+# Quick install: `curl https://raw.githubusercontent.com/permafrost-dev/eget/main/scripts/install.sh | bash`
 #
 # Acknowledgments:
 #   - eget: https://github.com/zyedidia/zyedidia.github.io/blob/master/eget.sh
@@ -10,7 +10,7 @@
 
 set -e -u
 
-REPONAME="permafrost-dev/eget"
+REPONAME="permafrost-dev/zeget"
 
 githubLatestTag() {
   finalUrl=$(curl "https://github.com/$1/releases/latest" -s -L -I -o /dev/null -w '%{url_effective}')
@@ -67,7 +67,7 @@ re-run this script.
 For example:
   $ export GETEGET_PLATFORM=linux_amd64
 EOM
-  printf "  $ curl https://raw.githubusercontent.com/%s/eget | bash\n" "$REPONAME"
+  printf "  $ curl https://raw.githubusercontent.com/%s/main/scripts/install.sh | bash\n" "$REPONAME"
   exit 1
 fi
 
@@ -80,23 +80,23 @@ fi
 
 printf "Detected platform: %s\n" "$platform"
 printf "Latest Version: %s\n" "$TAG"
-printf "Downloading https://github.com/%s/releases/download/v%s/eget-%s-%s.%s\n" "$REPONAME" "$TAG" "$TAG" "$platform" "$extension"
+printf "Downloading https://github.com/%s/releases/download/v%s/zeget-%s-%s.%s\n" "$REPONAME" "$TAG" "$TAG" "$platform" "$extension"
 
-curl -L "https://github.com/$REPONAME/releases/download/v$TAG/eget-$TAG-$platform.$extension" > "eget.$extension"
+curl -L "https://github.com/$REPONAME/releases/download/v$TAG/zeget-$TAG-$platform.$extension" > "zeget.$extension"
 
 case "$extension" in
-  "zip") unzip -j "eget.$extension" -d "eget-$TAG-$platform" ;;
-  "tar.gz") tar -xvzf "eget.$extension" "eget-$TAG-$platform/eget" ;;
+  "zip") unzip -j "eget.$extension" -d "zeget-$TAG-$platform" ;;
+  "tar.gz") tar -xvzf "eget.$extension" "zeget-$TAG-$platform/eget" ;;
 esac
 
-mv "eget-$TAG-$platform/eget" ./eget
-chmod +x ./eget
+mv "zeget-$TAG-$platform/zeget" ./zeget
+chmod +x ./zeget
 
-rm "eget.$extension"
-rm -rf "eget-$TAG-$platform"
+rm "zeget.$extension"
+rm -rf "zeget-$TAG-$platform"
 
 cat <<-'EOM'
-Eget has been downloaded to the current directory.
+zeget has been downloaded to the current directory.
 You can run it with:
-./eget
+./zeget
 EOM
