@@ -1,5 +1,7 @@
 package appflags
 
+import "github.com/permafrost-dev/eget/lib/filters"
+
 type Flags struct {
 	Tag           string
 	Prerelease    bool
@@ -19,6 +21,7 @@ type Flags struct {
 	NoInteraction bool
 	Verbose       bool
 	NoProgress    bool
+	Filters       []*filters.Filter
 }
 
 type CliFlags struct {
@@ -43,4 +46,5 @@ type CliFlags struct {
 	NoInteraction bool      `long:"no-interaction" description:"do not prompt for user input"`
 	Verbose       *bool     `short:"v" long:"verbose" description:"show verbose output"`
 	NoProgress    *bool     `long:"no-progress" description:"do not show download progress"`
+	Filters       *string   `short:"F" long:"filter" description:"filter assets using functions like 'all', 'any', 'none', 'has', 'ext'"`
 }

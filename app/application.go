@@ -15,6 +15,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	. "github.com/permafrost-dev/eget/lib/appflags"
+	"github.com/permafrost-dev/eget/lib/assets"
 	. "github.com/permafrost-dev/eget/lib/assets"
 	"github.com/permafrost-dev/eget/lib/data"
 	"github.com/permafrost-dev/eget/lib/detectors"
@@ -120,6 +121,23 @@ func (app *Application) Run() *ReturnStatus {
 
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)
+
+	if len(app.Opts.Filters) > 0 {
+		var temp []assets.Asset = []assets.Asset{}
+
+		for _, filter := range app.Opts.Filters {
+			for _, a := range findResult.Assets {
+				if filter.Apply(a) {
+					temp = append(temp, a)
+				}
+			}
+		}
+		findResult.Assets = temp
+		if len(temp) == 0 {
+			findResult.Error = fmt.Errorf("no assets found matching filters")
+		}
+	}
+
 	app.cacheTarget(&finder, &findResult)
 
 	if shouldReturn, returnStatus := app.shouldReturn(findResult.Error); shouldReturn {
@@ -283,7 +301,7 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 	choiceStr := fmt.Sprintf("%s", choices[choice-1])
 
 	result := candidates[choice-1]
-	result.Filters = filters.FilenameToAssetFilters(choiceStr)
+	result.Filters = utilities.FilenameToAssetFilters(choiceStr)
 
 	return result, nil
 
@@ -421,6 +439,11 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 
 	app.Opts.Verbose = app.cli.Verbose != nil && *app.cli.Verbose
 	app.Opts.NoProgress = app.cli.NoProgress != nil && *app.cli.NoProgress
+
+	app.Opts.Filters = []*filters.Filter{}
+	if app.cli.Filters != nil {
+		app.Opts.Filters = filters.NewParser().ParseDefinitions(*app.cli.Filters)
+	}
 
 	return target, nil
 }

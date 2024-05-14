@@ -1,10 +1,10 @@
-package filters_test
+package utilities_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/permafrost-dev/eget/lib/filters"
+	. "github.com/permafrost-dev/eget/lib/utilities"
 )
 
 var _ = Describe("Filters", func() {
