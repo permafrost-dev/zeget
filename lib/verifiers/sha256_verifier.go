@@ -17,7 +17,7 @@ type Sha256Verifier struct {
 	Verifier
 }
 
-func NewSha256Verifier(client *download.Client, expectedHex string) (*Sha256Verifier, error) {
+func NewSha256Verifier(client download.ClientContract, expectedHex string) (*Sha256Verifier, error) {
 	expected, _ := hex.DecodeString(expectedHex)
 	if len(expected) != sha256.Size {
 		return nil, fmt.Errorf("sha256sum (%s) too small: %d bytes decoded", expectedHex, len(expectedHex))
