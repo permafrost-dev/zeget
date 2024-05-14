@@ -83,8 +83,8 @@ jobs:
         run: task ginkgo-bootstrap
           
       - name: Run unit tests with coverage
-        run: ginkgo -cover -r -v ./app ./lib/**
-        
+        run: go test -coverprofile ./coverprofile.out -v ./lib/** ./app
+
       - name: Upload coverage reports to Codecov
         if: ${{success()}}
         uses: codecov/codecov-action@v4
