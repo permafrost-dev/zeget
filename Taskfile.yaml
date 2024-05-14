@@ -123,8 +123,10 @@ tasks:
     ignore_error: true
     generates:
       - ./lib/**/*_suite_test.go
+      - ./app/app_suite_test.go
     cmds:
       - sh -c '/bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash'
+      - sh -c 'cd app && ginkgo bootstrap; cd ..'
 
   # remove all coverageprofile.out files:
   clean-coverage:
