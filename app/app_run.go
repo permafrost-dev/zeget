@@ -63,7 +63,7 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	assetWrapper := NewAssetWrapper(findResult.Assets)
-	detector, err := detectors.DetermineCorrectDetector(&app.Opts, nil)
+	detector, err := detectors.DetermineCorrectDetector(&app.Opts, app.Config.Global.IgnorePatterns, nil)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
@@ -72,6 +72,24 @@ func (app *Application) Run() *ReturnStatus {
 	detected, err := detector.Detect(assetWrapper.Assets)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	filterDetector, _ := detectors.GetPatternDetectors(app.Config.Global.IgnorePatterns, nil)
+	filteredDetected, err := filterDetector.DetectWithoutSystem(findResult.Assets)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	if filteredDetected != nil {
+		//remove filteredDetected.Candidates from detected.Candidates
+		detected.Candidates = FilterArr(detected.Candidates, func(a assets.Asset) bool {
+			return IsInArr(filteredDetected.Candidates, a, func(a1 assets.Asset, a2 assets.Asset) bool { return a1.Name == a2.Name })
+		})
+
+		if len(detected.Candidates) == 1 {
+			detected.Asset = detected.Candidates[0]
+			detected.Candidates = []assets.Asset{}
+		}
 	}
 
 	asset := detected.Asset
@@ -103,7 +121,6 @@ func (app *Application) Run() *ReturnStatus {
 
 	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
 	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateDownloadedAt(tagDownloaded)
-	// app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateReleaseDate(asset.ReleaseDate)
 
 	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
 	if err != nil {

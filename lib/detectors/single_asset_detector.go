@@ -3,6 +3,7 @@ package detectors
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"strings"
 
 	. "github.com/permafrost-dev/zeget/lib/assets"
@@ -11,23 +12,34 @@ import (
 // SingleAssetDetector finds a single named asset. If Anti is true it finds all
 // assets that don't contain Asset.
 type SingleAssetDetector struct {
-	Asset string
-	Anti  bool
+	Asset     string
+	Anti      bool
+	IsPattern bool
+	Compiled  *regexp.Regexp
 }
 
 func (s *SingleAssetDetector) Detect(assets []Asset) (DetectionResult, error) {
 	var candidates []Asset
+
 	for _, a := range assets {
+
+		// handle regex patterns
+		if s.Anti && s.IsPattern {
+			if !s.Compiled.MatchString(a.Name) && !s.Compiled.MatchString(path.Base(a.Name)) {
+				candidates = append(candidates, a)
+			}
+		}
+
 		if !s.Anti && path.Base(a.Name) == s.Asset {
 			return NewDetectionResult(&a, nil), nil
 		}
 		if !s.Anti && strings.Contains(path.Base(a.Name), s.Asset) {
 			candidates = append(candidates, a)
 		}
-		if s.Anti && path.Base(a.Name) != s.Asset && len(assets) == 2 {
+		if !s.IsPattern && s.Anti && path.Base(a.Name) != s.Asset && len(assets) == 2 {
 			return NewDetectionResult(&a, nil), nil
 		}
-		if s.Anti && !strings.Contains(path.Base(a.Name), s.Asset) {
+		if !s.IsPattern && s.Anti && !strings.Contains(path.Base(a.Name), s.Asset) {
 			candidates = append(candidates, a)
 		}
 	}

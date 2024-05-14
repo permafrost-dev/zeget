@@ -249,7 +249,7 @@ func TestDetermineCorrectDetector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			system, _ := NewSystemDetector(runtime.GOOS, runtime.GOARCH)
-			got, err := DetermineCorrectDetector(&tt.flags, system)
+			got, err := DetermineCorrectDetector(&tt.flags, []string{}, system)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DetermineCorrectDetector() error = %v, wantErr %v", err, tt.wantErr)
 				return
