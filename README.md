@@ -30,6 +30,18 @@ downloaded and extracted to the current directory.
 > It is mostly backward-compatible with eget, and should work as a drop-in replacement for most cases.
 >
 
+There are a few notable changes from the original utility:
+
+- Verify checksums from `checksums.txt` assets
+- Download release assets from private repositories
+- Remembers user asset selections to avoid re-prompting
+- Prettier output
+- Numerous bug fixes
+- New flags, such as `--no-interaction`
+- Improved test coverage using `ginkgo` and a CI/CD pipeline
+- `golangci-lint` integration
+- `goreleaser` integration
+
 zeget has a number of detection mechanisms and should work out-of-the-box with
 most software that is distributed via single binaries on GitHub releases. First
 try using zeget on your software, it is likely that is will "just work".
