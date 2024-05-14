@@ -1,6 +1,6 @@
 coverage:
   precision: 2
-  range: "65...85"
+  range: "60...80"
   status:
     project:
       default:
