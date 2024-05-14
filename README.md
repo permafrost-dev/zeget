@@ -8,7 +8,7 @@
   <br>
   <img alt="codecov" src="https://img.shields.io/codecov/c/gh/permafrost-dev/zeget?style=flat-square&logo=codecov&logoColor=white" />
   <img alt="Code Climate maintainability" src="https://img.shields.io/codeclimate/maintainability/permafrost-dev/zeget?style=flat-square&logo=codeclimate&logoColor=white" />
-  <img alt="Code Climate tech debt" src="https://img.shields.io/codeclimate/tech-debt/permafrost-dev/zeget?style=flat-square&logo=codeclimate&logoColor=white" />
+  <img alt="Code Climate tech debt" src="https://img.shields.io/codeclimate/tech-debt/permafrost-dev/zeget?style=flat-square&logo=codeclimate&logoColor=white&nocache=1" />
   <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/permafrost-dev/zeget?style=flat-square" />
 </p>
 
