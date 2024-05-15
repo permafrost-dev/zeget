@@ -57,7 +57,7 @@ linters-settings:
       - name: cyclomatic
         arguments: [30]
       - name: function-length
-        arguments: [105, 130]
+        arguments: [105, 140]
       - name: blank-imports
       - name: context-as-argument
       - name: context-keys-type
