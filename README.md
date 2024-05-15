@@ -1,7 +1,7 @@
 # zeget: easy pre-built binary installation
 
 <p align="center">
-  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/permafrost-dev/zeget/build-and-test.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=test%20suite">
+  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/permafrost-dev/zeget/build-and-test.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=test%20suite&nocache=1">
   <!--<img alt="Release" src="https://img.shields.io/github/release/permafrost-dev/zeget.svg?label=Release&style=flat-square" />-->
   <img alt="Github last commit (main branch)" src="https://img.shields.io/github/last-commit/permafrost-dev/zeget/main?display_timestamp=committer&style=flat-square&logo=github&logoColor=white" />
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" />
