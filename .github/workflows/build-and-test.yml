@@ -46,10 +46,10 @@ jobs:
 
       - name: Run functional test
         env: 
-          EGET_CONFIG: ./eget.toml
-          EGET_BIN: ''
-          TEST_EGET: ../dist/eget
-        run: cd test && go run test_eget.go
+          ZEGET_CONFIG: ./zeget.toml
+          ZEGET_BIN: ''
+          TEST_ZEGET: ../dist/zeget
+        run: cd test && go run test_zeget.go
 
   run-tests:
     runs-on: ubuntu-latest

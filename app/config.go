@@ -131,6 +131,9 @@ func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (
 	var cfg = config
 	var filenames = []string{}
 
+	if configFilePath, ok := os.LookupEnv("ZEGET_CONFIG"); ok && configFilePath != "" {
+		filenames = append(filenames, configFilePath)
+	}
 	if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok && configFilePath != "" {
 		filenames = append(filenames, configFilePath)
 	}
