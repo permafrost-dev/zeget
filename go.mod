@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.22.2
 
 require (
-	github.com/BurntSushi/toml v1.3.2
+	github.com/BurntSushi/toml v1.4.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/gobwas/glob v0.2.3
 	github.com/jessevdk/go-flags v1.5.0
