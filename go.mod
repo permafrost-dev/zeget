@@ -10,7 +10,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/klauspost/compress v1.17.8
-	github.com/schollz/progressbar/v3 v3.14.2
+	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/ulikunitz/xz v0.5.12
 )
 
@@ -39,6 +39,6 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/twpayne/go-vfs/v5 v5.0.4
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.19.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/term v0.22.0 // indirect
 )
