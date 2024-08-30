@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/permafrost-dev/eget/lib/download"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/download"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 	pb "github.com/schollz/progressbar/v3"
 )
 

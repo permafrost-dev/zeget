@@ -3,7 +3,7 @@ package data
 import (
 	"time"
 
-	"github.com/permafrost-dev/eget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/assets"
 )
 
 type RateLimit struct {
@@ -61,6 +61,14 @@ func (ad *ApplicationData) SetRepositoryEntryByKey(key string, entry *Repository
 
 func (rce *RepositoryCacheEntry) UpdateCheckedAt() {
 	rce.LastCheckAt = time.Now()
+
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
+}
+
+func (rce *RepositoryCacheEntry) UpdateReleaseDate(date time.Time) {
+	rce.LastReleaseDate = date
 
 	if rce.owner != nil {
 		rce.owner.SaveToFile()

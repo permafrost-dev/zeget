@@ -1,15 +1,15 @@
 # zeget: easy pre-built binary installation
 
 <p align="center">
-  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/permafrost-dev/eget/build-and-test.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=test%20suite">
-  <!--<img alt="Release" src="https://img.shields.io/github/release/permafrost-dev/eget.svg?label=Release&style=flat-square" />-->
-  <img alt="Github last commit (main branch)" src="https://img.shields.io/github/last-commit/permafrost-dev/eget/main?display_timestamp=committer&style=flat-square&logo=github&logoColor=white" />
+  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/permafrost-dev/zeget/build-and-test.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=test%20suite&nocache=1">
+  <!--<img alt="Release" src="https://img.shields.io/github/release/permafrost-dev/zeget.svg?label=Release&style=flat-square" />-->
+  <img alt="Github last commit (main branch)" src="https://img.shields.io/github/last-commit/permafrost-dev/zeget/main?display_timestamp=committer&style=flat-square&logo=github&logoColor=white" />
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" />
   <br>
-  <img alt="codecov" src="https://img.shields.io/codecov/c/gh/permafrost-dev/eget?style=flat-square&logo=codecov&logoColor=white" />
-  <img alt="Code Climate maintainability" src="https://img.shields.io/codeclimate/maintainability/permafrost-dev/eget?style=flat-square&logo=codeclimate&logoColor=white" />
-  <img alt="Code Climate tech debt" src="https://img.shields.io/codeclimate/tech-debt/permafrost-dev/eget?style=flat-square&logo=codeclimate&logoColor=white" />
-  <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/permafrost-dev/eget?style=flat-square" />
+  <img alt="codecov" src="https://img.shields.io/codecov/c/gh/permafrost-dev/zeget?style=flat-square&logo=codecov&logoColor=white" />
+  <img alt="Code Climate maintainability" src="https://img.shields.io/codeclimate/maintainability/permafrost-dev/zeget?style=flat-square&logo=codeclimate&logoColor=white" />
+  <img alt="Code Climate tech debt" src="https://img.shields.io/codeclimate/tech-debt/permafrost-dev/zeget?style=flat-square&logo=codeclimate&logoColor=white&nocache=1" />
+  <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/permafrost-dev/zeget?style=flat-square" />
 </p>
 
 **zeget** is the best way to easily get pre-built binaries for your favorite
@@ -19,14 +19,28 @@ To use it, provide a repository and zeget will search through the assets from th
 latest release to find a suitable binary for your system. If successful, the asset is
 downloaded and extracted to the current directory.
 
-![Eget Demo](https://github.com/zyedidia/blobs/blob/master/eget-demo.gif?raw=true)
+![zeget Demo](https://github.com/zyedidia/blobs/blob/master/eget-demo.gif?raw=true)
 
 > **zeget origins**
 >
 > zeget was forked from the original [eget](https://github.com/zyedidia/eget) to implement bug fixes,
-> improvements, new features, as well as major refactoring to a package-based architecture.
-> It is mostly backward-compatible with eget, and should work as a drop-in replacement.
+> improvements, new features, user requests, and implement major refactoring to a package-based
+> architecture.
+> zeget also endeavors to have a robust test suite with an acceptable code coverage percentage.
+> It is mostly backward-compatible with eget, and should work as a drop-in replacement for most cases.
 >
+
+There are a few notable changes from the original utility:
+
+- Verify checksums from `checksums.txt` assets
+- Download release assets from private repositories
+- Remembers user asset selections to avoid re-prompting
+- Prettier output
+- Numerous bug fixes
+- New flags, such as `--no-interaction`
+- Improved test coverage using `ginkgo` and a CI/CD pipeline
+- `golangci-lint` integration
+- `goreleaser` integration
 
 zeget has a number of detection mechanisms and should work out-of-the-box with
 most software that is distributed via single binaries on GitHub releases. First
@@ -45,7 +59,7 @@ zeget neovim/neovim --no-interaction
 zeget ogham/exa --asset ^musl
 zeget --system darwin/amd64 sharkdp/fd
 zeget BurntSushi/ripgrep
-zeget -f eget.1 permafrost-dev/eget
+zeget -f eget.1 permafrost-dev/zeget
 zeget zachjs/sv2v
 zeget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz --file go --to ~/go1.21.1
 zeget --all --file '*' ActivityWatch/activitywatch
@@ -53,12 +67,12 @@ zeget --all --file '*' ActivityWatch/activitywatch
 
 ## How to get zeget
 
-Before you can get anything, you have to get Eget. If you already have Eget and want to upgrade, use `eget permafrost-dev/eget`.
+Before you can get anything, you have to get zeget. If you already have zeget and want to upgrade, use `zeget permafrost-dev/zeget`.
 
 ### Quick-install script
 
 ```sh
-curl -o install.sh https://raw.githubusercontent.com/permafrost-dev/eget/main/scripts/install.sh
+curl -o install.sh https://raw.githubusercontent.com/permafrost-dev/zeget/main/scripts/install.sh
 sha256sum install.sh # verify with hash below
 bash install.sh
 ```
@@ -66,37 +80,39 @@ bash install.sh
 Or alternatively (less secure):
 
 ```sh
-curl https://raw.githubusercontent.com/permafrost-dev/eget/main/scripts/install.sh | sh
+curl https://raw.githubusercontent.com/permafrost-dev/zeget/main/scripts/install.sh | sh
 ```
 
 You can then place the downloaded binary in a location on your `$PATH` such as `/usr/local/bin`.
 
 To verify the script, use `sha256sum install.sh` after downloading; the sha256 checksum is:
 
-> <code data-id="installer-checksum">06a00722d5ffba35e37a84c5eae8c84d495a87329f847aacef1841b7c8433824</code><br>
+> <code data-id="installer-checksum">077d2431344eae1765039dfb8b3b4dff2efdd36677e5d49673dd0fe650d73e87</code><br>
 
 ### Pre-built binaries
 
-Pre-built binaries are available on the [releases](https://github.com/permafrost-dev/eget/releases) page.
+Pre-built binaries are available on the [releases](https://github.com/permafrost-dev/zeget/releases) page.
 
 ### From source
 
 Install the latest released version:
 
 ```sh
-go install github.com/permafrost-dev/eget@latest
+go install github.com/permafrost-dev/zeget@latest
 ```
 
 or install from HEAD:
 
 ```sh
-git clone https://github.com/permafrost-dev/eget
+git clone https://github.com/permafrost-dev/zeget
 cd eget
-make build # or go build (produces incomplete version information)
+task build # or go build (produces incomplete version information)
 ```
 
-A man page can be generated by cloning the repository and running `make eget.1`
-(requires pandoc). You can also use `zeget` to download the man page: `zeget -f eget.1 permafrost-dev/eget`.
+zeget uses Task, a modern replacement for `make`, for performing various tasks. Install Task from the [official repository](https://github.com/go-task/task).
+
+A man page can be generated by cloning the repository and running `task build-docs` (requires pandoc).
+You can also use `zeget` to download the man page: `zeget -f zeget.1 permafrost-dev/zeget`.
 
 ## Usage
 
@@ -118,31 +134,31 @@ the file contains individual lines in the format `hash file.ext`, with one
 line per filename/hash.
 
 When installing an executable, zeget will place it in the current directory by
-default. If the environment variable `EGET_BIN` is non-empty, zeget will
+default. If the environment variable `ZEGET_BIN` is non-empty, zeget will
 place the executable in that directory.
 
 Directories can also be specified as files to extract, and all files within
 them will be extracted. For example:
 
 ```sh
-eget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz --file go --to ~/go1.21.1
+zeget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz --file go --to ~/go1.21.1
 ```
 
 GitHub limits API requests to 60 per hour for unauthenticated users. If you
 would like to perform more requests (up to 5,000 per hour), you can set up a
 personal access token and assign it to an environment variable named either
-`GITHUB_TOKEN` or `EGET_GITHUB_TOKEN` when running zeget. If both are set,
-`EGET_GITHUB_TOKEN` will take precedence. zeget will read this variable and
+`GITHUB_TOKEN` or `ZEGET_GITHUB_TOKEN` when running zeget. If both are set,
+`ZEGET_GITHUB_TOKEN` will take precedence. zeget will read this variable and
 send the token as authorization with requests to GitHub. It is also possible
 to read the token from a file by using `@/path/to/file` as the token value.
 
 Zeget uses a cache to store information about repositories, releases, and user-selected
 downloads when multiple assets are available. The cache is stored in the user's home
-directory by default as `~/.eget.cache.json`. The cache allows zeget to remember and
+directory by default as `~/.zeget.cache.json`. The cache allows zeget to remember and
 reuse selections made by the user (avoiding user input), and to avoid making unnecessary
 requests to GitHub.
 
-Note that some flags have changed from the original `eget` tool. The following is the output of `zeget --help`:
+Note that some flags have changed from the [original utility](https://github.com/zyedidia/eget). The following is the output of `zeget --help`:
 
 ```sh
 Usage:
@@ -159,8 +175,9 @@ Application Options:
   -q, --quiet           only print essential output
   -d, --download-only   stop after downloading the asset (no extraction)
       --upgrade-only    only download if release is more recent than current version
-  -a, --asset=          download a specific asset containing the given string; can be specified multiple times 
-                        for additional filtering; use ^ for anti-match
+  -a, --asset=          download a specific asset containing the given string; can be 
+                        specified multiple times  for additional filtering; 
+                        use '^' or '!' prefix for anti-match
   -H, --hash            show the SHA-256 hash of the downloaded asset
       --sha256          show the SHA-256 hash of the downloaded asset
       --verify-sha256=  verify the downloaded asset checksum against the one provided
@@ -176,8 +193,8 @@ Application Options:
 
 ## Configuration
 
-zeget can be configured using a TOML file located at `~/.eget.toml` or it will fallback to the expected `XDG_CONFIG_HOME` directory of your os. Alternatively,
-the configuration file can be located in the same directory as the zeget binary or the path specified with the environment variable `EGET_CONFIG`.
+zeget can be configured using a TOML file located at `~/.zeget.toml` or it will fallback to the expected `XDG_CONFIG_HOME` directory of your os. Alternatively,
+the configuration file can be located in the same directory as the zeget binary or the path specified with the environment variable `ZEGET_CONFIG`.
 
 Both global settings can be configured, as well as setting on a per-repository basis.
 
@@ -211,6 +228,7 @@ target = "~/.local/bin"
 | `system` | `--system` | The target system to download for. | `all` |
 | `target` | `--to` | The directory to move the downloaded file to after extraction. | `.` |
 | `upgrade_only` | `--upgrade-only` | Whether to only download if release is more recent than current version. | `false` |
+| `ignore_patterns` | `N/A` | An array of regular expressions to always ignore when detecting candidates for selection or extraction. | `[]` |
 
 ## Available settings - repository sections
 
@@ -237,6 +255,7 @@ target = "~/.local/bin"
     show_hash = false
     upgrade_only = true
     target = "/home/user1/bin"
+    ignore_patterns = ["(.sig|.pem|.apk)$", "musl", "static"]
 
 ["zyedidia/micro"]
     upgrade_only = false

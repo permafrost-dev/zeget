@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/permafrost-dev/eget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/assets"
 )
 
 // async get the modification time of a filesystem file:

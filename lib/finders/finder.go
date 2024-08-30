@@ -1,8 +1,8 @@
 package finders
 
 import (
-	"github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/download"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/download"
 )
 
 // A Finder returns a list of URLs making up a project's assets.

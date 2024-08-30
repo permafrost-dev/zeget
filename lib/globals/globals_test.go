@@ -3,7 +3,7 @@ package globals_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/globals"
+	"github.com/permafrost-dev/zeget/lib/globals"
 )
 
 var _ = Describe("Globals", func() {

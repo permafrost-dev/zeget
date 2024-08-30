@@ -8,7 +8,7 @@ vars:
   APP_VERSION_FILE: './lib/globals/version.go'
   ENTRY_FILENAME: './main.go'
   BUILD_OUTPUT_DIR: './dist'
-  BINARY_FILENAME: 'eget'
+  BINARY_FILENAME: 'zeget'
   DIST_TARGET_FILE: '{{.BUILD_OUTPUT_DIR}}/{{.BINARY_FILENAME}}'
   GIT_COMMIT:
     sh: git log -n 1 --format=%h
@@ -59,11 +59,11 @@ tasks:
     preconditions:
       - which pandoc
     sources:
-      - man/eget.md
+      - man/zeget.md
     generates:
-      - eget.1
+      - zeget.1
     cmds:
-      - pandoc man/eget.md -s -t man -o eget.1
+      - pandoc man/zeget.md -s -t man -o zeget.1
 
   build-all:
     desc: Builds everything
@@ -84,7 +84,7 @@ tasks:
       - test -f {{.DIST_TARGET_FILE}}
     cmds:
       - rm -f {{.DIST_TARGET_FILE}}
-      - rm test/eget.1 || true 
+      - rm test/zeget.1 || true 
       - rm test/{fd,micro,nvim,pandoc,rg.exe} || true
 
   lint:
@@ -122,7 +122,7 @@ tasks:
     label: ginkgo
     ignore_error: true
     generates:
-      - ./eget_suite_test.go
+      - ./*_suite_test.go
       - ./lib/**/*_suite_test.go
       - ./app/app_suite_test.go
     cmds:

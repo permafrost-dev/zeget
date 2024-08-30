@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/permafrost-dev/eget/lib/extraction"
+	"github.com/permafrost-dev/zeget/lib/extraction"
 )
 
 var _ = Describe("LiteralFileChooser", func() {

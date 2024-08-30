@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/twpayne/go-vfs/v5/vfst"
 
-	"github.com/permafrost-dev/eget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/files"
 )
 
 var _ = Describe("Link", func() {

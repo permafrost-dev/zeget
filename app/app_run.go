@@ -2,13 +2,14 @@ package app
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/permafrost-dev/eget/lib/assets"
-	. "github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/detectors"
-	"github.com/permafrost-dev/eget/lib/reporters"
-	"github.com/permafrost-dev/eget/lib/utilities"
-	. "github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/detectors"
+	"github.com/permafrost-dev/zeget/lib/reporters"
+	"github.com/permafrost-dev/zeget/lib/utilities"
+	. "github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 func (app *Application) Run() *ReturnStatus {
@@ -29,6 +30,10 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	app.RefreshRateLimit()
+	if err := app.RateLimitExceeded(); err != nil {
+		app.WriteErrorLine("GitHub rate limit exceeded. It resets at %s.", app.Cache.Data.RateLimit.Reset.Format(time.RFC1123))
+		return NewReturnStatus(FatalError, nil, fmt.Sprintf("error: %v", err))
+	}
 
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)
@@ -58,7 +63,7 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	assetWrapper := NewAssetWrapper(findResult.Assets)
-	detector, err := detectors.DetermineCorrectDetector(&app.Opts, nil)
+	detector, err := detectors.DetermineCorrectDetector(&app.Opts, app.Config.Global.IgnorePatterns, nil)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
@@ -67,6 +72,24 @@ func (app *Application) Run() *ReturnStatus {
 	detected, err := detector.Detect(assetWrapper.Assets)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	filterDetector, _ := detectors.GetPatternDetectors(app.Config.Global.IgnorePatterns, nil)
+	filteredDetected, err := filterDetector.DetectWithoutSystem(findResult.Assets)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	if filteredDetected != nil {
+		//remove filteredDetected.Candidates from detected.Candidates
+		detected.Candidates = FilterArr(detected.Candidates, func(a assets.Asset) bool {
+			return IsInArr(filteredDetected.Candidates, a, func(a1 assets.Asset, a2 assets.Asset) bool { return a1.Name == a2.Name })
+		})
+
+		if len(detected.Candidates) == 1 {
+			detected.Asset = detected.Candidates[0]
+			detected.Candidates = []assets.Asset{}
+		}
 	}
 
 	asset := detected.Asset
@@ -84,7 +107,7 @@ func (app *Application) Run() *ReturnStatus {
 
 	assetWrapper.Asset = &asset
 
-	app.WriteLine("› downloading %s...", assetWrapper.Asset.DownloadURL) // print the URL
+	app.WriteLine("› " + "downloading " + assetWrapper.Asset.DownloadURL + "...") // print the URL
 
 	body, err := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
 	if err != nil {

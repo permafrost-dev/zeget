@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/permafrost-dev/eget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/assets"
 )
 
 type AssetSha256HashReporter struct {

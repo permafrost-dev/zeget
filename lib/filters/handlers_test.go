@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/permafrost-dev/eget/lib/assets"
-	. "github.com/permafrost-dev/eget/lib/filters"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/filters"
 )
 
 var anyHandler = FilterMap["any"].Handler

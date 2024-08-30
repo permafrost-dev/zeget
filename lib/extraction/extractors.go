@@ -12,10 +12,10 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/permafrost-dev/eget/lib/archives"
-	"github.com/permafrost-dev/eget/lib/files"
-	"github.com/permafrost-dev/eget/lib/targetfile"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/archives"
+	"github.com/permafrost-dev/zeget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/targetfile"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 	"github.com/twpayne/go-vfs/v5"
 	"github.com/ulikunitz/xz"
 )

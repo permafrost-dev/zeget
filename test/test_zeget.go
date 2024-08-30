@@ -27,18 +27,18 @@ func must(err error) {
 }
 
 func main() {
-	eget := os.Getenv("TEST_EGET")
+	zeget := os.Getenv("TEST_ZEGET")
 
-	must(run(eget, "--system", "linux/amd64", "jgm/pandoc", "--to", "."))
+	must(run(zeget, "--system", "linux/amd64", "jgm/pandoc", "--to", "."))
 	must(fileExists("pandoc"))
 
-	must(run(eget, "zyedidia/micro", "--tag", "nightly", "--asset", "osx"))
+	must(run(zeget, "zyedidia/micro", "--tag", "nightly", "--asset", "osx"))
 	must(fileExists("micro"))
 
-	must(run(eget, "--asset", "nvim.appimage", "--to", "nvim", "neovim/neovim"))
+	must(run(zeget, "--asset", "nvim.appimage", "--to", "nvim", "neovim/neovim"))
 	must(fileExists("nvim"))
 
-	must(run(eget, "--system", "darwin/amd64", "sharkdp/fd"))
+	must(run(zeget, "--system", "darwin/amd64", "sharkdp/fd"))
 	must(fileExists("fd"))
 
 	// must(run(eget, "--system", "windows/amd64", "--asset", "windows-gnu", "BurntSushi/ripgrep"))

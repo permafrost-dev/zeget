@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/data"
+	"github.com/permafrost-dev/zeget/lib/data"
 )
 
 var _ = Describe("ApplicationData", func() {

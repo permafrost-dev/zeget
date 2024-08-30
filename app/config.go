@@ -7,24 +7,25 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/permafrost-dev/eget/lib/globals"
-	"github.com/permafrost-dev/eget/lib/home"
-	"github.com/permafrost-dev/eget/lib/utilities"
+	"github.com/permafrost-dev/zeget/lib/globals"
+	"github.com/permafrost-dev/zeget/lib/home"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 	"github.com/twpayne/go-vfs/v5"
 )
 
 type ConfigGlobal struct {
-	All            bool   `toml:"all"`
-	DownloadOnly   bool   `toml:"download_only"`
-	File           string `toml:"file"`
-	GithubToken    string `toml:"github_token"`
-	Quiet          bool   `toml:"quiet"`
-	ShowHash       bool   `toml:"show_hash"`
-	Source         bool   `toml:"download_source"`
-	System         string `toml:"system"`
-	Target         string `toml:"target"`
-	UpgradeOnly    bool   `toml:"upgrade_only"`
-	RemoveExisting bool   `toml:"remove_existing"`
+	All            bool     `toml:"all"`
+	DownloadOnly   bool     `toml:"download_only"`
+	File           string   `toml:"file"`
+	GithubToken    string   `toml:"github_token"`
+	Quiet          bool     `toml:"quiet"`
+	ShowHash       bool     `toml:"show_hash"`
+	Source         bool     `toml:"download_source"`
+	System         string   `toml:"system"`
+	Target         string   `toml:"target"`
+	UpgradeOnly    bool     `toml:"upgrade_only"`
+	RemoveExisting bool     `toml:"remove_existing"`
+	IgnorePatterns []string `toml:"ignore_patterns"`
 }
 
 type ConfigRepository struct {
@@ -130,6 +131,9 @@ func (app *Application) tryLoadingConfigFiles(config *Config, homePath string) (
 	var cfg = config
 	var filenames = []string{}
 
+	if configFilePath, ok := os.LookupEnv("ZEGET_CONFIG"); ok && configFilePath != "" {
+		filenames = append(filenames, configFilePath)
+	}
 	if configFilePath, ok := os.LookupEnv("EGET_CONFIG"); ok && configFilePath != "" {
 		filenames = append(filenames, configFilePath)
 	}
@@ -167,13 +171,14 @@ func (app *Application) initializeConfig() {
 	if err != nil {
 		app.Config = &Config{
 			Global: ConfigGlobal{
-				All:          false,
-				DownloadOnly: false,
-				GithubToken:  "",
-				Quiet:        false,
-				ShowHash:     false,
-				Source:       false,
-				UpgradeOnly:  false,
+				All:            false,
+				DownloadOnly:   false,
+				GithubToken:    "",
+				Quiet:          false,
+				ShowHash:       false,
+				Source:         false,
+				UpgradeOnly:    false,
+				IgnorePatterns: []string{},
 			},
 			Repositories: make(map[string]ConfigRepository, 0),
 		}
@@ -192,6 +197,7 @@ func (app *Application) initializeConfig() {
 	config.Global.UpgradeOnly = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "upgrade_only"), config.Global.UpgradeOnly, false)
 	config.Global.Target = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "target"), config.Global.Target, utilities.GetCurrentDirectory())
 	config.Global.RemoveExisting = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "remove_existing"), config.Global.RemoveExisting, false)
+	config.Global.IgnorePatterns = utilities.SetIf(!config.Meta.MetaData.IsDefined("global", "ignore_patterns"), config.Global.IgnorePatterns, []string{})
 
 	// ensure "~" in the target directory is expanded
 	config.Global.Target, _ = home.Expand(config.Global.Target)

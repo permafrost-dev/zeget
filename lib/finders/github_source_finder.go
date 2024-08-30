@@ -3,8 +3,8 @@ package finders
 import (
 	"fmt"
 
-	"github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/download"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/download"
 )
 
 type GithubSourceFinder struct {

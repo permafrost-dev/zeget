@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/permafrost-dev/eget/lib/files"
+	"github.com/permafrost-dev/zeget/lib/files"
 )
 
 type ZipArchive struct {

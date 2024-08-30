@@ -3,9 +3,9 @@ package verifiers_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/assets"
-	"github.com/permafrost-dev/eget/lib/download"
-	. "github.com/permafrost-dev/eget/lib/verifiers"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/download"
+	. "github.com/permafrost-dev/zeget/lib/verifiers"
 )
 
 var _ = Describe("NoVerifier", func() {

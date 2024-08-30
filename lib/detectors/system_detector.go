@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/permafrost-dev/eget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/assets"
 )
 
 // A SystemDetector matches a particular OS/Arch system pair.

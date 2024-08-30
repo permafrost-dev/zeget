@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/permafrost-dev/eget/lib/assets"
-	. "github.com/permafrost-dev/eget/lib/github"
+	"github.com/permafrost-dev/zeget/lib/assets"
+	. "github.com/permafrost-dev/zeget/lib/github"
 )
 
 var _ = Describe("Release", func() {

@@ -35,7 +35,7 @@ header: zeget Manual
   file, and abort installation if a mismatch occurs.
 
   When installing an executable, zeget will place it in the current directory by
-  default. If the environment variable **`zeget_BIN`** is non-empty, zeget will
+  default. If the environment variable **`ZEGET_BIN`** is non-empty, zeget will
   place the executable in that directory. The `--to` flag may also be used to
   customize the install location.
 

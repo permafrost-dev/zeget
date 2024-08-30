@@ -3,8 +3,8 @@ package verifiers_test
 import (
 	"testing"
 
-	"github.com/permafrost-dev/eget/lib/download"
-	. "github.com/permafrost-dev/eget/lib/verifiers"
+	"github.com/permafrost-dev/zeget/lib/download"
+	. "github.com/permafrost-dev/zeget/lib/verifiers"
 )
 
 func TestNoVerifier_Verify(t *testing.T) {
