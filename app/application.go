@@ -290,7 +290,7 @@ func (app *Application) ProcessFlags(errorHandler ProcessFlagsErrorHandlerFunc) 
 	app.Args = args
 
 	if app.cli.Version {
-		fmt.Println("eget version", Version)
+		fmt.Println("zeget version", Version)
 		return "", ErrSuccess
 	}
 

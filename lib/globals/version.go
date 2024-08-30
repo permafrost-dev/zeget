@@ -1,3 +1,3 @@
 package globals
 
-var Version = "1.3.2+src"
+var Version = "2.0.0-rc"
