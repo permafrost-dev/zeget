@@ -5,6 +5,7 @@ cd $PROJECT_BASE_PATH
 
 NPX_BIN=$(which bunx npx | grep -v 'not found' | head -n 1 || echo "")
 GOLINT_BIN=$(which golangci-lint | grep -v 'not found' | head -n 1 || echo "")
+TYPOS_BIN=$(which typos | grep -v 'not found' | head -n 1 || echo "")
 
 GIT_STAGED_FILES=$(git diff --name-only --staged)
 GO_STAGED_FILES_COUNT=$(printf "$GIT_STAGED_FILES" | grep -E '\.go$' | wc -l | grep -E '[1-9][0-9]*$' || echo "0")
@@ -31,4 +32,9 @@ fi
 if [ "$PRETTIER_STAGED_FILES" != "" ] && [ "$NPX_BIN" != "" ]; then
     runCommand "$NPX_BIN" prettier --write $PRETTIER_STAGED_FILES
     git add $PRETTIER_STAGED_FILES
+fi
+
+if [ ! -z "$TYPOS_BIN" ]; then
+    echo "[pre-commit] typos"
+    echo $GIT_STAGED_FILES | $TYPOS_BIN --file-list -
 fi
