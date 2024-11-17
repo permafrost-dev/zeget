@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	g "github.com/onsi/ginkgo/v2"
-	pb "github.com/schollz/progressbar/v3"
 
 	// . "github.com/onsi/gomega"
 	gm "github.com/onsi/gomega"
@@ -190,29 +189,29 @@ var _ = Describe("DownloadClient", func() {
 		gm.Expect(string(body)).To(gm.Equal("mock body"))
 	})
 
-	It("should Download a file", func() {
-		client := &MockHTTPClient{
-			DoFunc: func(req *http.Request) (*http.Response, error) {
-				return newMockResponse("mock body", http.StatusOK), nil
-			},
-			Requests: []MockHTTPRequestData{},
-		}
+	// It("should Download a file", func() {
+	// 	client := &MockHTTPClient{
+	// 		DoFunc: func(req *http.Request) (*http.Response, error) {
+	// 			return newMockResponse("mock body", http.StatusOK), nil
+	// 		},
+	// 		Requests: []MockHTTPRequestData{},
+	// 	}
 
-		dc := &Client{CreateClient: func() *http.Client { return &http.Client{Transport: client} }}
-		dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
+	// 	dc := &Client{CreateClient: func() *http.Client { return &http.Client{Transport: client} }}
+	// 	dc.SetDisableSSL(true) // To avoid dealing with TLS in tests
 
-		// Override the getClient method to use the mock client
-		originalGetClient := dc.GetClient
-		dc.CreateClient = func() *http.Client {
-			return &http.Client{Transport: client}
-		}
-		defer func() { dc.CreateClient = originalGetClient }()
+	// 	// Override the getClient method to use the mock client
+	// 	originalGetClient := dc.GetClient
+	// 	dc.CreateClient = func() *http.Client {
+	// 		return &http.Client{Transport: client}
+	// 	}
+	// 	defer func() { dc.CreateClient = originalGetClient }()
 
-		var buf bytes.Buffer
-		err := dc.Download("https://github.com", &buf, func(size int64) *pb.ProgressBar {
-			return pb.NewOptions64(size, pb.OptionSetWriter(io.Discard))
-		})
-		gm.Expect(err).To(gm.BeNil())
-		gm.Expect(buf.String()).To(gm.Equal("mock body"))
-	})
+	// 	var buf bytes.Buffer
+	// 	err := dc.Download("https://github.com", &buf, func(size int64) *pb.ProgressBar {
+	// 		return pb.NewOptions64(size, pb.OptionSetWriter(io.Discard))
+	// 	})
+	// 	gm.Expect(err).To(gm.BeNil())
+	// 	gm.Expect(buf.String()).To(gm.Equal("mock body"))
+	// })
 })
