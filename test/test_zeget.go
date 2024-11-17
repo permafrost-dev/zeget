@@ -32,13 +32,13 @@ func main() {
 	must(run(zeget, "--system", "linux/amd64", "jgm/pandoc", "--to", "."))
 	must(fileExists("pandoc"))
 
-	must(run(zeget, "zyedidia/micro", "--tag", "nightly", "--asset", "osx"))
-	must(fileExists("micro"))
+	// must(run(zeget, "zyedidia/micro", "--tag", "nightly", "--asset", "osx"))
+	// must(fileExists("micro"))
 
-	must(run(zeget, "--asset", "nvim.appimage", "--to", "nvim", "neovim/neovim"))
-	must(fileExists("nvim"))
+	// must(run(zeget, "--asset", "nvim.appimage", "--to", "nvim", "neovim/neovim"))
+	// must(fileExists("nvim"))
 
-	must(run(zeget, "--system", "darwin/amd64", "sharkdp/fd"))
+	must(run(zeget, "--system", "darwin/amd64", "sharkdp/fd", "--to", "."))
 	must(fileExists("fd"))
 
 	// must(run(eget, "--system", "windows/amd64", "--asset", "windows-gnu", "BurntSushi/ripgrep"))
