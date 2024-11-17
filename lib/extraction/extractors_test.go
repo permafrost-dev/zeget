@@ -65,6 +65,46 @@ var _ = Describe("Extractor", func() {
 
 				defer ef.Extract(ef.Name)
 			})
+
+			It("should select the correct extractor for .tar.bz2 files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.tar.bz2", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.ArchiveExtractor{}))
+			})
+
+			It("should select the correct extractor for .tar.xz files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.tar.xz", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.ArchiveExtractor{}))
+			})
+
+			It("should select the correct extractor for .tar.zst files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.tar.zst", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.ArchiveExtractor{}))
+			})
+
+			It("should select the correct extractor for .tar files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.tar", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.ArchiveExtractor{}))
+			})
+
+			It("should select the correct extractor for .zip files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.zip", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.ArchiveExtractor{}))
+			})
+
+			It("should select the correct extractor for .bz2 files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.bz2", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.SingleFileExtractor{}))
+			})
+
+			It("should select the correct extractor for .xz files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.xz", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.SingleFileExtractor{}))
+			})
+
+			It("should select the correct extractor for .zst files", func() {
+				extractor := extraction.NewExtractor(testFS, "test.zst", "", nil)
+				Expect(extractor).To(BeAssignableToTypeOf(&extraction.SingleFileExtractor{}))
+			})
 		})
 
 	})
