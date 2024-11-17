@@ -1,93 +1,52 @@
 run:
-  tests: false
-  timeout: 30s
+  timeout: 15s
   modules-download-mode: readonly
+
+  # Include test files or not. Default: true
+  tests: true
+
   allow-parallel-runners: true
-
-issues:
-  max-issues-per-linter: 75
-  max-same-issues: 10  
-
-  exclude-dirs:
-    - .custom-hooks
-    - .github
-    - dist
-    - scripts
-    - test
-    - tools
-    - vendor
-
-  exclude-files:
-    - '^vendor/'
-    - '.+_suite_test.go$'
-
-severity:
-  default-severity: warning
-  case-sensitive: false
-  rules:
-    - severity: error
-      text: "seems to be unused, consider removing"
+  concurrency: 8
 
 linters:
   disable-all: true
   fast: true
   enable:
+    - gocyclo
     - govet
+    - maintidx
     - misspell
-    - nestif
-    - revive
-    # - staticcheck
-    #- unused
+    - unused
+    - unparam
+
+severity:
+  default-severity: warning
+  case-sensitive: false
 
 linters-settings:
-  funlen:
-    lines: 150
-    statements: 105
   gocyclo:
-    min-complexity: 20
+    min-complexity: 30
+
+  funlen:
+    lines: 100
+    statements: 80
+
+  gocritic:
+    disabled-checks:
+      - exitAfterDefer
+
+  gosec:
+    severity: medium
+    config:
+      G301: "0755" # Maximum allowed permissions mode for os.Mkdir and os.MkdirAll - Default: "0750"
+      G302: "0644" # Maximum allowed permissions mode for os.OpenFile and os.Chmod - Default: "0600"
+      G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
+
+  maintidx:
+    under: 25
+
   misspell:
     locale: US
-  nestif:
-    min-complexity: 4
-  revive:
-    enable-all-rules: false
-    ignore-generated-header: true
-    severity: warning
-    rules:
-      - name: cyclomatic
-        arguments: [30]
-      - name: function-length
-        arguments: [105, 140]
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: empty-block
-      - name: error-naming
-      - name: error-return
-      - name: error-strings
-      - name: errorf
-      - name: exported
-      - name: increment-decrement
-      - name: indent-error-flow
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: redefines-builtin-id
-      - name: superfluous-else
-      - name: time-naming
-      - name: unexported-return
-      - name: unreachable-code
-      - name: unused-parameter
-      - name: var-naming
 
-output:
-  print-issued-lines: false
-  print-linter-name: true
-  formats:
-    - format: colored-line-number
-  show-stats: true
-  sort-results: true
-  sort-order:
-    - linter
-    - severity
-    - file
+  nestif:
+    min-complexity: 4  # Minimal complexity of if statements to report. - Default: 5

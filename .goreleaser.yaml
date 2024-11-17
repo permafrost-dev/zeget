@@ -1,24 +1,26 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
 
-dist: build
-
 before:
   hooks:
-    - task mod
+    - go mod tidy
     - task update-version-file
 
+dist: build
+
 archives:
-  - format: tar.gz
-    format_overrides:
+  - format_overrides:
       - goos: windows
         format: zip
 
 builds:
-  - id: eget
-    main: .
-    binary: eget
+  - main: './main.go'
+    binary: 'zeget'
     mod_timestamp: '{{ .CommitTimestamp }}'
     flags:
       - -trimpath
@@ -30,19 +32,16 @@ builds:
       - darwin_amd64
       - windows_amd64
 
-# brews:
-#   -
-#     name: stackup
-#     homepage: 'https://github.com/permafrost-dev/homebrew-stackup'
-#     description: 'a single application to manage your entire dev stack'
-#     download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
-#     custom_require: "lib/custom_download_strategy"
-#     license: MIT
-#     repository:
-#       owner: permafrost-dev
-#       name: homebrew-stackup
-#       branch: main
-
 checksum:
-  name_template: checksums.txt
+  name_template: "checksums.txt"
   algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
