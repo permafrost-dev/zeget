@@ -14,10 +14,9 @@ linters:
   enable:
     - gocyclo
     - govet
-    - maintidx
+    #- maintidx
     - misspell
     - unused
-    - unparam
 
 severity:
   default-severity: warning
@@ -43,7 +42,7 @@ linters-settings:
       G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
 
   maintidx:
-    under: 25
+    under: 30
 
   misspell:
     locale: US

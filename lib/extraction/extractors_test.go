@@ -1,9 +1,7 @@
 package extraction_test
 
 import (
-	"compress/gzip"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 
@@ -23,10 +21,6 @@ func (mc *MockChooser) Choose(name string, dir bool, mode fs.FileMode) (direct b
 		return mc.ChooseFn(name, dir, mode)
 	}
 	return false, false
-}
-
-var gunzipper = func(r io.Reader) (io.Reader, error) {
-	return gzip.NewReader(r)
 }
 
 var _ = Describe("Extractor", func() {

@@ -9,7 +9,7 @@ import (
 
 var checkMarkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#1bef52")).Bold(true)
 var filenameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#efe51b"))
-var fadedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#fffff"))
+//var fadedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#fffff"))
 
 func (app *Application) Write(format string, args ...any) (n int, err error) {
 	temp := []interface{}{}
