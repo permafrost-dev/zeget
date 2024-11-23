@@ -10,7 +10,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/klauspost/compress v1.17.11
-	github.com/schollz/progressbar/v3 v3.14.6
+	github.com/schollz/progressbar/v3 v3.17.1
 	github.com/ulikunitz/xz v0.5.12
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
@@ -39,7 +39,6 @@ require (
 )
 
 require (
-	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/google/cel-go v0.22.1
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
@@ -48,6 +47,6 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/twpayne/go-vfs/v5 v5.0.4
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/term v0.26.0 // indirect
 )
