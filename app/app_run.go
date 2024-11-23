@@ -7,12 +7,14 @@ import (
 	"github.com/permafrost-dev/zeget/lib/assets"
 	. "github.com/permafrost-dev/zeget/lib/assets"
 	"github.com/permafrost-dev/zeget/lib/detectors"
+	"github.com/permafrost-dev/zeget/lib/registry"
 	"github.com/permafrost-dev/zeget/lib/reporters"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 func (app *Application) Run() *ReturnStatus {
+
 	app.Cache.LoadFromFile()
 
 	target, returnStatus := app.RunSetup(FatalHandler)
@@ -140,6 +142,27 @@ func (app *Application) Run() *ReturnStatus {
 	}
 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
+
+	ref, _ := utilities.ParseRepositoryReference(app.Target)
+
+	hash := registry.CalculateFileHash(string(body))
+	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateTag(asset.DownloadURL, tagDownloaded)
+	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateHash(hash)
+
+	realTag := utilities.ParseVersionTagFromURL(asset.DownloadURL, tagDownloaded)
+
+	app.Registry.AddOrUpdatePackage(registry.PackageData{
+		Source: "github",
+		Repo:   ref.Name, Owner: ref.Owner,
+		InstalledAt:  time.Now().Format(time.RFC3339),
+		AssetFilters: asset.Filters,
+		Asset:        asset.Name,
+		Binary:       bin.String(),
+		URL:          asset.DownloadURL,
+		BinaryHash:   hash,
+		Tag:          realTag,
+	})
+	app.Registry.Save()
 
 	if app.Opts.Verbose {
 		reporters.NewMessageReporter(app.Output, "number of extracted files: %d\n", extractedCount).Report()

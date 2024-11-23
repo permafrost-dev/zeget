@@ -129,6 +129,18 @@ func IsLocalFile(s string) bool {
 	return err == nil
 }
 
+// PathExists checks if a given path exists
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 // IsDirectory returns true if the file at 'path' is a directory.
 func IsDirectory(path string) bool {
 	fileInfo, err := os.Stat(path)
@@ -266,4 +278,18 @@ func ExtractToolNameFromURL(url string) string {
 	}
 
 	return "Unknown"
+}
+
+func ParseVersionTagFromURL(url string, currentTag string) string {
+	// parse version from url like "https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-x86_64-unknown-linux-gnu.tar.gz":
+
+	// Regular expression to find the version pattern.
+	re := regexp.MustCompile(`releases\/download\/(v?[\d\.]+)`)
+	matches := re.FindStringSubmatch(url)
+
+	if len(matches) > 1 {
+		return matches[1]
+	}
+
+	return currentTag
 }

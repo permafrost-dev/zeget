@@ -15,6 +15,10 @@ type ExtractedFile struct {
 	Dir         bool
 }
 
+func (e ExtractedFile) CompletePath() string {
+	return e.Name
+}
+
 // Mode returns the filemode of the extracted file.
 func (e ExtractedFile) Mode() fs.FileMode {
 	return utilities.ModeFrom(e.Name, e.mode)

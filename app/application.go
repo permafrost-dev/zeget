@@ -24,6 +24,7 @@ import (
 	"github.com/permafrost-dev/zeget/lib/github"
 	. "github.com/permafrost-dev/zeget/lib/globals"
 	"github.com/permafrost-dev/zeget/lib/home"
+	"github.com/permafrost-dev/zeget/lib/registry"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
 	"github.com/permafrost-dev/zeget/lib/verifiers"
@@ -47,6 +48,7 @@ type Application struct {
 	Cache       data.Cache
 	Filesystem  vfs.FS
 	Reference   *RepositoryReference
+	Registry    *registry.LockFile
 	Target      string
 	TargetFound bool
 }
@@ -77,12 +79,16 @@ func NewApplication(outputs *ApplicationOutputs) *Application {
 
 	vf := vfs.OSFS
 
+	lockFilename, _ := home.Expand("~/.zeget.lock")
+	registryLockFile, _ := registry.NewLockFile(lockFilename, "linux", "amd64")
+
 	result := &Application{
 		Opts:       Flags{},
 		Output:     nil,
 		Cache:      *data.NewCache(GetCacheFilename(vf)),
 		Outputs:    outputs,
 		Filesystem: vf,
+		Registry:   &registryLockFile,
 	}
 
 	result.initOutputs()

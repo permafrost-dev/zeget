@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/permafrost-dev/zeget/lib/assets"
+	"github.com/permafrost-dev/zeget/lib/utilities"
 )
 
 type RateLimit struct {
@@ -14,19 +15,20 @@ type RateLimit struct {
 }
 
 type RepositoryCacheEntry struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`
-	LastCheckAt     time.Time      `json:"last_check_at"`
-	LastDownloadAt  time.Time      `json:"last_download_at"`
-	LastDownloadTag string         `json:"last_download_tag"`
-	LastReleaseDate time.Time      `json:"last_release_date"`
-	ExpiresAt       time.Time      `json:"expires_at"`
-	Target          string         `json:"target"`
-	Filters         []string       `json:"filters"`
-	Assets          []assets.Asset `json:"assets"`
-	FindError       error          `json:"find_error"`
-	owner           *Cache
-	exists          bool
+	ID               string         `json:"id"`
+	Name             string         `json:"name"`
+	LastCheckAt      time.Time      `json:"last_check_at"`
+	LastDownloadAt   time.Time      `json:"last_download_at"`
+	LastDownloadTag  string         `json:"last_download_tag"`
+	LastReleaseDate  time.Time      `json:"last_release_date"`
+	LastDownloadHash string         `json:"last_download_hash"`
+	ExpiresAt        time.Time      `json:"expires_at"`
+	Target           string         `json:"target"`
+	Filters          []string       `json:"filters"`
+	Assets           []assets.Asset `json:"assets"`
+	FindError        error          `json:"find_error"`
+	owner            *Cache
+	exists           bool
 }
 
 type ApplicationData struct {
@@ -78,6 +80,22 @@ func (rce *RepositoryCacheEntry) UpdateReleaseDate(date time.Time) {
 func (rce *RepositoryCacheEntry) UpdateDownloadedAt(tag string) {
 	rce.LastDownloadAt = time.Now().Local()
 	rce.LastDownloadTag = tag
+
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
+}
+
+func (rce *RepositoryCacheEntry) UpdateTag(URL string, tag string) {
+	rce.LastDownloadTag = utilities.ParseVersionTagFromURL(URL, tag)
+
+	if rce.owner != nil {
+		rce.owner.SaveToFile()
+	}
+}
+
+func (rce *RepositoryCacheEntry) UpdateHash(hash string) {
+	rce.LastDownloadHash = hash
 
 	if rce.owner != nil {
 		rce.owner.SaveToFile()
