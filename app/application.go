@@ -15,6 +15,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	. "github.com/permafrost-dev/zeget/lib/appflags"
+	"github.com/permafrost-dev/zeget/lib/assets"
 	. "github.com/permafrost-dev/zeget/lib/assets"
 	"github.com/permafrost-dev/zeget/lib/data"
 	"github.com/permafrost-dev/zeget/lib/download"
@@ -25,6 +26,7 @@ import (
 	. "github.com/permafrost-dev/zeget/lib/globals"
 	"github.com/permafrost-dev/zeget/lib/home"
 	"github.com/permafrost-dev/zeget/lib/registry"
+	"github.com/permafrost-dev/zeget/lib/reporters"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
 	"github.com/permafrost-dev/zeget/lib/verifiers"
@@ -174,9 +176,9 @@ func (app *Application) targetToProject(target string) error {
 }
 
 // if multiple candidates are returned, the user must select manually which one to download
-func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) (Asset, error) {
+func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) (*Asset, error) {
 	if app.cli.NoInteraction || app.Opts.NoInteraction {
-		return Asset{}, fmt.Errorf("error: multiple candidates found, cannot select automatically (user interaction disabled)")
+		return &Asset{}, fmt.Errorf("error: multiple candidates found, cannot select automatically (user interaction disabled)")
 	}
 
 	app.WriteErrorLine("%v: please select manually", err)
@@ -188,7 +190,7 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 
 	choice, err := app.userSelect(choices)
 	if err != nil {
-		return Asset{}, fmt.Errorf("error: %v", err)
+		return &Asset{}, fmt.Errorf("error: %v", err)
 	}
 
 	choiceStr := fmt.Sprintf("%s", choices[choice-1])
@@ -196,7 +198,7 @@ func (app *Application) selectFromMultipleAssets(candidates []Asset, err error) 
 	result := candidates[choice-1]
 	result.Filters = utilities.FilenameToAssetFilters(choiceStr)
 
-	return result, nil
+	return &result, nil
 
 }
 
@@ -632,4 +634,63 @@ func (app *Application) downloadConfigRepositories() error {
 	}
 
 	return nil
+}
+
+func (app *Application) ProcessFilters(finder *finders.ValidFinder, findResult *finders.FindResult) *ReturnStatus {
+	if len(app.Opts.Filters) > 0 {
+		var temp []assets.Asset = []assets.Asset{}
+
+		for _, filter := range app.Opts.Filters {
+			for _, a := range findResult.Assets {
+				if filter.Apply(a) {
+					temp = append(temp, a)
+				}
+			}
+		}
+		findResult.Assets = temp
+
+		if len(findResult.Assets) == 0 {
+			findResult.Error = fmt.Errorf("no assets found matching filters")
+			return NewReturnStatus(FatalError, findResult.Error, fmt.Sprintf("error: %v", findResult.Error))
+		}
+	}
+
+	return nil
+}
+
+func (app *Application) DownloadAndVerify(assetWrapper *AssetWrapper, findResult *finders.FindResult) ([]byte, *ReturnStatus) {
+	app.WriteLine("› " + "downloading " + assetWrapper.Asset.DownloadURL + "...") // print the URL
+
+	body, err := app.downloadAsset(assetWrapper.Asset, findResult) // download with progress bar and get the response body
+	if err != nil {
+		return nil, NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	app.VerifyChecksums(assetWrapper, body)
+
+	if app.Opts.Sha256 || app.Opts.Hash {
+		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Output).Report(string(body))
+	}
+
+	return body, nil
+}
+
+func (app *Application) ExtractDownloadedAsset(assetWrapper *AssetWrapper, body []byte, finder *finders.ValidFinder) (int, *ReturnStatus) {
+	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
+	if err != nil {
+		return -1, NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
+	if err != nil && len(bins) != 0 && !app.Opts.All {
+		var e error
+		bin, e = app.selectFromMultipleCandidates(bin, bins, err)
+		if e != nil {
+			return -1, NewReturnStatus(FatalError, e, fmt.Sprintf("error: %v", e))
+		}
+	}
+
+	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
+
+	return extractedCount, nil
 }

@@ -1,6 +1,8 @@
 package utilities
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -283,13 +285,18 @@ func ExtractToolNameFromURL(url string) string {
 func ParseVersionTagFromURL(url string, currentTag string) string {
 	// parse version from url like "https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-x86_64-unknown-linux-gnu.tar.gz":
 
-	// Regular expression to find the version pattern.
 	re := regexp.MustCompile(`releases\/download\/(v?[\d\.]+)`)
-	matches := re.FindStringSubmatch(url)
-
-	if len(matches) > 1 {
+	if matches := re.FindStringSubmatch(url); len(matches) > 1 {
 		return matches[1]
 	}
 
-	return currentTag
+	return SetIf(currentTag != "", "latest", currentTag)
+}
+
+func CalculateStringHash(body string) string {
+	hasher := sha256.New()
+
+	hasher.Write([]byte(body))
+
+	return hex.EncodeToString(hasher.Sum(nil))
 }

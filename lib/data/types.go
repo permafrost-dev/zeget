@@ -36,6 +36,10 @@ type ApplicationData struct {
 	Repositories map[string]*RepositoryCacheEntry `json:"repositories"`
 }
 
+func (rce *RepositoryCacheEntry) Save() error {
+	return rce.owner.SaveToFile()
+}
+
 func (ad *ApplicationData) HasRepositoryEntryByKey(key string) bool {
 	_, found := ad.Repositories[key]
 	return found

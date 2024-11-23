@@ -7,7 +7,6 @@ import (
 	"github.com/permafrost-dev/zeget/lib/assets"
 	. "github.com/permafrost-dev/zeget/lib/assets"
 	"github.com/permafrost-dev/zeget/lib/detectors"
-	"github.com/permafrost-dev/zeget/lib/registry"
 	"github.com/permafrost-dev/zeget/lib/reporters"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
@@ -40,22 +39,8 @@ func (app *Application) Run() *ReturnStatus {
 	finder := app.getFinder()
 	findResult := app.getFindResult(finder)
 
-	if len(app.Opts.Filters) > 0 {
-		var temp []assets.Asset = []assets.Asset{}
-
-		for _, filter := range app.Opts.Filters {
-			for _, a := range findResult.Assets {
-				if filter.Apply(a) {
-					temp = append(temp, a)
-				}
-			}
-		}
-		findResult.Assets = temp
-
-		if len(findResult.Assets) == 0 {
-			findResult.Error = fmt.Errorf("no assets found matching filters")
-			return NewReturnStatus(FatalError, findResult.Error, fmt.Sprintf("error: %v", findResult.Error))
-		}
+	if result := app.ProcessFilters(&finder, &findResult); result != nil {
+		return result
 	}
 
 	app.cacheTarget(&finder, &findResult)
@@ -94,75 +79,31 @@ func (app *Application) Run() *ReturnStatus {
 		}
 	}
 
-	asset := detected.Asset
+	assetWrapper.Asset = &detected.Asset
 
 	if len(detected.Candidates) != 0 {
-		asset, err = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
+		assetWrapper.Asset, err = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
 		if err != nil {
 			return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 		}
 
-		// convert the selected asset to an array of filters, then save them to file for future use
-		app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).Filters = asset.Filters
-		app.Cache.SaveToFile()
+		cacheItem.Filters = assetWrapper.Asset.Filters
 	}
 
-	assetWrapper.Asset = &asset
-
-	app.WriteLine("› " + "downloading " + assetWrapper.Asset.DownloadURL + "...") // print the URL
-
-	body, err := app.downloadAsset(assetWrapper.Asset, &findResult) // download with progress bar and get the response body
-	if err != nil {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-	}
-	app.VerifyChecksums(assetWrapper, body)
-
-	if app.Opts.Sha256 || app.Opts.Hash {
-		reporters.NewAssetSha256HashReporter(assetWrapper.Asset, app.Output).Report(string(body))
+	body, result := app.DownloadAndVerify(assetWrapper, &findResult)
+	if result != nil {
+		return result
 	}
 
-	tagDownloaded := utilities.SetIf(app.Opts.Tag != "", "latest", app.Opts.Tag)
-	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateDownloadedAt(tagDownloaded)
-
-	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
-	if err != nil {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	extractedCount, result := app.ExtractDownloadedAsset(assetWrapper, body, &finder)
+	if result != nil {
+		return result
 	}
 
-	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
-	// if err != nil && len(bins) == 0 {
-	// 	return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-	// }
-	if err != nil && len(bins) != 0 && !app.Opts.All {
-		var e error
-		bin, e = app.selectFromMultipleCandidates(bin, bins, err)
-		if e != nil {
-			return NewReturnStatus(FatalError, e, fmt.Sprintf("error: %v", e))
-		}
-	}
-
-	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
-
-	ref, _ := utilities.ParseRepositoryReference(app.Target)
-
-	hash := registry.CalculateFileHash(string(body))
-	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateTag(asset.DownloadURL, tagDownloaded)
-	app.Cache.Data.GetRepositoryEntryByKey(app.Target, &app.Cache).UpdateHash(hash)
-
-	realTag := utilities.ParseVersionTagFromURL(asset.DownloadURL, tagDownloaded)
-
-	app.Registry.AddOrUpdatePackage(registry.PackageData{
-		Source: "github",
-		Repo:   ref.Name, Owner: ref.Owner,
-		InstalledAt:  time.Now().Format(time.RFC3339),
-		AssetFilters: asset.Filters,
-		Asset:        asset.Name,
-		Binary:       bin.String(),
-		URL:          asset.DownloadURL,
-		BinaryHash:   hash,
-		Tag:          realTag,
-	})
-	app.Registry.Save()
+	cacheItem.LastDownloadAt = time.Now().Local()
+	cacheItem.LastDownloadTag = utilities.ParseVersionTagFromURL(assetWrapper.Asset.DownloadURL, app.Opts.Tag)
+	cacheItem.LastDownloadHash = utilities.CalculateStringHash(string(body))
+	cacheItem.Save()
 
 	if app.Opts.Verbose {
 		reporters.NewMessageReporter(app.Output, "number of extracted files: %d\n", extractedCount).Report()

@@ -1,8 +1,6 @@
 package registry
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -198,12 +196,4 @@ func DeleteAssetAndBinary(stewPkgPath, stewBinPath, asset, binary string) error 
 		return err
 	}
 	return nil
-}
-
-func CalculateFileHash(body string) string {
-	hasher := sha256.New()
-
-	hasher.Write([]byte(body))
-
-	return hex.EncodeToString(hasher.Sum(nil))
 }
