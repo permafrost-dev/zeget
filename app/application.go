@@ -153,14 +153,23 @@ func (app *Application) getFindResult(finder finders.ValidFinder) finders.FindRe
 	return *finder.Finder.Find(app.DownloadClient())
 }
 
-func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *finders.FindResult) {
-	app.Cache.AddRepository(
+func (app *Application) Find() (*finders.ValidFinder, *finders.FindResult) {
+	finder := app.getFinder()
+	findResult := app.getFindResult(finder)
+
+	return &finder, &findResult
+}
+
+func (app *Application) cacheTarget(finding *finders.ValidFinder, findResult *finders.FindResult) *data.RepositoryCacheEntry {
+	item, _ := app.Cache.AddRepository(
 		app.Target,
 		finding.Tool,
 		app.Opts.Asset,
 		findResult,
 		time.Now().Add(time.Hour*24*7),
 	)
+
+	return item
 }
 
 func (app *Application) targetToProject(target string) error {
@@ -716,4 +725,19 @@ func (app *Application) FilterDetectedAssets(detected *detectors.DetectionResult
 	}
 
 	return nil
+}
+
+func (app *Application) DetectAssets(assetWrapper *AssetWrapper) (*detectors.DetectionResult, error) {
+	detector, err := detectors.DetermineCorrectDetector(&app.Opts, app.Config.Global.IgnorePatterns, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// get the url and candidates from the detector
+	detected, err := detector.Detect(assetWrapper.Assets)
+	if err != nil {
+		return nil, err
+	}
+
+	return &detected, nil
 }

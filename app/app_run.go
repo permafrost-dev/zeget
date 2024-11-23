@@ -5,7 +5,6 @@ import (
 	"time"
 
 	. "github.com/permafrost-dev/zeget/lib/assets"
-	"github.com/permafrost-dev/zeget/lib/detectors"
 	"github.com/permafrost-dev/zeget/lib/reporters"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
@@ -35,32 +34,25 @@ func (app *Application) Run() *ReturnStatus {
 		return NewReturnStatus(FatalError, nil, fmt.Sprintf("error: %v", err))
 	}
 
-	finder := app.getFinder()
-	findResult := app.getFindResult(finder)
+	finder, findResult := app.Find()
 
-	if result := app.ProcessFilters(&finder, &findResult); result != nil {
+	if result := app.ProcessFilters(finder, findResult); result != nil {
 		return result
 	}
 
-	app.cacheTarget(&finder, &findResult)
+	cacheItem = app.cacheTarget(finder, findResult)
 
 	if shouldReturn, returnStatus := app.shouldReturn(findResult.Error); shouldReturn {
 		return returnStatus
 	}
 
 	assetWrapper := NewAssetWrapper(findResult.Assets)
-	detector, err := detectors.DetermineCorrectDetector(&app.Opts, app.Config.Global.IgnorePatterns, nil)
+	detected, err := app.DetectAssets(assetWrapper)
 	if err != nil {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	// get the url and candidates from the detector
-	detected, err := detector.Detect(assetWrapper.Assets)
-	if err != nil {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-	}
-
-	if result := app.FilterDetectedAssets(&detected, &findResult); result != nil {
+	if result := app.FilterDetectedAssets(detected, findResult); result != nil {
 		return result
 	}
 
@@ -73,12 +65,12 @@ func (app *Application) Run() *ReturnStatus {
 		}
 	}
 
-	body, result := app.DownloadAndVerify(assetWrapper, &findResult)
+	body, result := app.DownloadAndVerify(assetWrapper, findResult)
 	if result != nil {
 		return result
 	}
 
-	extractedCount, result := app.ExtractDownloadedAsset(assetWrapper, body, &finder)
+	extractedCount, result := app.ExtractDownloadedAsset(assetWrapper, body, finder)
 	if result != nil {
 		return result
 	}
