@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/permafrost-dev/zeget/lib/assets"
 	. "github.com/permafrost-dev/zeget/lib/assets"
 	"github.com/permafrost-dev/zeget/lib/detectors"
 	"github.com/permafrost-dev/zeget/lib/reporters"
