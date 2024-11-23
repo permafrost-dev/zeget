@@ -61,22 +61,8 @@ func (app *Application) Run() *ReturnStatus {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	filterDetector, _ := detectors.GetPatternDetectors(app.Config.Global.IgnorePatterns, nil)
-	filteredDetected, err := filterDetector.DetectWithoutSystem(findResult.Assets)
-	if err != nil {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-	}
-
-	if filteredDetected != nil {
-		//remove filteredDetected.Candidates from detected.Candidates
-		detected.Candidates = FilterArr(detected.Candidates, func(a assets.Asset) bool {
-			return IsInArr(filteredDetected.Candidates, a, func(a1 assets.Asset, a2 assets.Asset) bool { return a1.Name == a2.Name })
-		})
-
-		if len(detected.Candidates) == 1 {
-			detected.Asset = detected.Candidates[0]
-			detected.Candidates = []assets.Asset{}
-		}
+	if result := app.FilterDetectedAssets(&detected, &findResult); result != nil {
+		return result
 	}
 
 	assetWrapper.Asset = &detected.Asset
@@ -86,8 +72,6 @@ func (app *Application) Run() *ReturnStatus {
 		if err != nil {
 			return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 		}
-
-		cacheItem.Filters = assetWrapper.Asset.Filters
 	}
 
 	body, result := app.DownloadAndVerify(assetWrapper, &findResult)
@@ -100,6 +84,7 @@ func (app *Application) Run() *ReturnStatus {
 		return result
 	}
 
+	cacheItem.Filters = assetWrapper.Asset.Filters
 	cacheItem.LastDownloadAt = time.Now().Local()
 	cacheItem.LastDownloadTag = utilities.ParseVersionTagFromURL(assetWrapper.Asset.DownloadURL, app.Opts.Tag)
 	cacheItem.LastDownloadHash = utilities.CalculateStringHash(string(body))

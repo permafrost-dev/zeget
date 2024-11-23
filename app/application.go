@@ -18,6 +18,7 @@ import (
 	"github.com/permafrost-dev/zeget/lib/assets"
 	. "github.com/permafrost-dev/zeget/lib/assets"
 	"github.com/permafrost-dev/zeget/lib/data"
+	"github.com/permafrost-dev/zeget/lib/detectors"
 	"github.com/permafrost-dev/zeget/lib/download"
 	. "github.com/permafrost-dev/zeget/lib/extraction"
 	"github.com/permafrost-dev/zeget/lib/filters"
@@ -693,4 +694,26 @@ func (app *Application) ExtractDownloadedAsset(assetWrapper *AssetWrapper, body 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
 
 	return extractedCount, nil
+}
+
+func (app *Application) FilterDetectedAssets(detected *detectors.DetectionResult, findResult *finders.FindResult) *ReturnStatus {
+	filterDetector, _ := detectors.GetPatternDetectors(app.Config.Global.IgnorePatterns, nil)
+	filteredDetected, err := filterDetector.DetectWithoutSystem(findResult.Assets)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+	}
+
+	if filteredDetected != nil {
+		//remove filteredDetected.Candidates from detected.Candidates
+		detected.Candidates = FilterArr(detected.Candidates, func(a assets.Asset) bool {
+			return IsInArr(filteredDetected.Candidates, a, func(a1 assets.Asset, a2 assets.Asset) bool { return a1.Name == a2.Name })
+		})
+
+		if len(detected.Candidates) == 1 {
+			detected.Asset = detected.Candidates[0]
+			detected.Candidates = []assets.Asset{}
+		}
+	}
+
+	return nil
 }
