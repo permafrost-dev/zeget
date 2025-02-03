@@ -15,7 +15,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.18.0 // indirect
+	cel.dev/expr v0.19.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -39,9 +39,8 @@ require (
 )
 
 require (
-	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/charmbracelet/lipgloss v0.10.0
-	github.com/google/cel-go v0.22.1
+	github.com/google/cel-go v0.23.2
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/onsi/ginkgo/v2 v2.22.0
