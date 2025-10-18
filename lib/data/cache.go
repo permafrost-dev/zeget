@@ -155,10 +155,12 @@ func (c *Cache) PurgeExpired() {
 func (c *Cache) SaveToFile() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+
 	file, err := json.MarshalIndent(c.Data, "", "    ")
 	if err != nil {
 		return err
 	}
+
 	return os.WriteFile(c.Filename, file, 0644)
 }
 

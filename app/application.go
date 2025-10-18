@@ -388,6 +388,8 @@ func (app *Application) downloadAsset(asset *Asset, findResult *finders.FindResu
 	repo, _ := app.Cache.AddRepository(asset.Name, "", []string{}, findResult, time.Now().Add(time.Hour*1))
 	repo.UpdateCheckedAt()
 
+	app.DownloadClient().SetTokenFromEnv()
+
 	if err := app.Download(asset.DownloadURL, buf); err != nil {
 		return []byte{}, fmt.Errorf("%s (URL: %s)", err, asset.DownloadURL)
 	}
@@ -668,12 +670,12 @@ func (app *Application) ProcessFilters(finder *finders.ValidFinder, findResult *
 	return nil
 }
 
-func (app *Application) DownloadAndVerify(assetWrapper *AssetWrapper, findResult *finders.FindResult) ([]byte, *ReturnStatus) {
+func (app *Application) DownloadAndVerify(assetWrapper *AssetWrapper, findResult *finders.FindResult) ([]byte, error) {
 	app.WriteLine("› " + "downloading " + assetWrapper.Asset.DownloadURL + "...") // print the URL
 
 	body, err := app.downloadAsset(assetWrapper.Asset, findResult) // download with progress bar and get the response body
 	if err != nil {
-		return nil, NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+		return nil, err
 	}
 
 	app.VerifyChecksums(assetWrapper, body)
@@ -685,10 +687,10 @@ func (app *Application) DownloadAndVerify(assetWrapper *AssetWrapper, findResult
 	return body, nil
 }
 
-func (app *Application) ExtractDownloadedAsset(assetWrapper *AssetWrapper, body []byte, finder *finders.ValidFinder) (int, *ReturnStatus) {
+func (app *Application) ExtractDownloadedAsset(assetWrapper *AssetWrapper, body []byte, finder *finders.ValidFinder) error {
 	extractor, err := app.getExtractor(assetWrapper.Asset, finder.Tool)
 	if err != nil {
-		return -1, NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+		return err
 	}
 
 	bin, bins, err := extractor.Extract(body, app.Opts.All) // get extraction candidates
@@ -696,20 +698,25 @@ func (app *Application) ExtractDownloadedAsset(assetWrapper *AssetWrapper, body 
 		var e error
 		bin, e = app.selectFromMultipleCandidates(bin, bins, err)
 		if e != nil {
-			return -1, NewReturnStatus(FatalError, e, fmt.Sprintf("error: %v", e))
+			return err
 		}
 	}
 
 	extractedCount := app.ExtractBins(bin, app.wrapBins(bins, bin), app.Opts.All)
 
-	return extractedCount, nil
+	if app.Opts.Verbose {
+		reporters.NewMessageReporter(app.Output, "number of extracted files: %d\n", extractedCount).Report()
+	}
+
+	return nil
 }
 
-func (app *Application) FilterDetectedAssets(detected *detectors.DetectionResult, findResult *finders.FindResult) *ReturnStatus {
+func (app *Application) FilterDetectedAssets(detected *detectors.DetectionResult, findResult *finders.FindResult, assetWrapper *AssetWrapper) error {
 	filterDetector, _ := detectors.GetPatternDetectors(app.Config.Global.IgnorePatterns, nil)
+
 	filteredDetected, err := filterDetector.DetectWithoutSystem(findResult.Assets)
 	if err != nil {
-		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
+		return err
 	}
 
 	if filteredDetected != nil {
@@ -723,6 +730,8 @@ func (app *Application) FilterDetectedAssets(detected *detectors.DetectionResult
 			detected.Candidates = []assets.Asset{}
 		}
 	}
+
+	assetWrapper.Asset = &detected.Asset
 
 	return nil
 }
@@ -740,4 +749,17 @@ func (app *Application) DetectAssets(assetWrapper *AssetWrapper) (*detectors.Det
 	}
 
 	return &detected, nil
+}
+
+func (app *Application) HandleMultipleCandidates(detected *detectors.DetectionResult, assetWrapper *AssetWrapper) error {
+	var err error
+
+	if len(detected.Candidates) != 0 {
+		assetWrapper.Asset, err = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -1,10 +1,13 @@
 package download
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 func isLocalFile(s string) bool {
 	_, err := os.Stat(s)
-	return err == nil
+	return err == nil || strings.HasPrefix(s, "file://")
 }
 
 func setIf[T interface{}](condition bool, original T, newValue T) T {

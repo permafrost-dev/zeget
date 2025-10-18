@@ -19,9 +19,9 @@ archives:
         format: zip
 
 builds:
-  - main: './main.go'
-    binary: 'zeget'
-    mod_timestamp: '{{ .CommitTimestamp }}'
+  - main: "./main.go"
+    binary: "unified-config"
+    mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
     ldflags:
@@ -31,6 +31,16 @@ builds:
       - darwin_arm64
       - darwin_amd64
       - windows_amd64
+
+# brews:
+# - name: 'unified-config'
+#   homepage: 'https://github.com/permafrost-dev/unified-config'
+#   description: 'unified config manager for many developer tools'
+#   license: "MIT"
+#     repository:
+#       owner: 'permafrost-dev'
+#       name: homebrew-unified-config
+#       branch: main
 
 checksum:
   name_template: "checksums.txt"

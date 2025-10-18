@@ -76,5 +76,5 @@ func (app *Application) getDownloadProgressBar(size int64) *pb.ProgressBar {
 // size of the file being downloaded, and the download will write to the
 // returned progress bar.
 func (app *Application) Download(url string, out io.Writer) error {
-	return app.DownloadClient().Download(url, out, app.getDownloadProgressBar)
+	return app.DownloadClient().DownloadSmart(url, out, app.getDownloadProgressBar, 4)
 }

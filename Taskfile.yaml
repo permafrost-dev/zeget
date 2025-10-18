@@ -16,7 +16,6 @@ vars:
     sh: find . -name "*.go" -printf '%h\n' | sort -u | egrep -v '^.$' | egrep -v 'tools/|test/' | tr '\n' ' ' | awk -F'|' '{ print $1 }'
 
 tasks:
-
   mod:
     desc: Downloads and tidy Go modules
     cmds:
@@ -39,19 +38,19 @@ tasks:
       - gofmt -l -w ./main.go ./lib/** ./app
       - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./*.md'
       - '{{.NPM_EXEC}} markdownlint-cli2 --fix ./man/*.md'
-      - '{{.NPM_EXEC}} prettier --write ./*.yaml ./*.yml .github/workflows/*.yml'
+      - '{{.NPM_EXEC}} prettier --write ./*.yaml ./*.yml .github/**/*.yml'
 
   build:
     desc: Builds binary
-    preconditions:
-      - task: mod
-      - task: prepare-dist-folder
     sources:
       - ./lib/**/*.go
-      - ./app/*.go
+      - ./app/**/*.go
+      - ./main.go
     generates:
       - '{{.DIST_TARGET_FILE}}'
     cmds:
+      - task: mod
+      - task: prepare-dist-folder
       - go build -trimpath -ldflags="-s -w -X main.Version={{.VERSION}}-{{.GIT_COMMIT}}" -o {{.DIST_TARGET_FILE}} {{.ENTRY_FILENAME}}
 
   build-docs:
@@ -74,7 +73,7 @@ tasks:
   clean:
     desc: Removes all artifacts
     cmds:
-      - task: clean-coverage
+      - find . -name 'coverage*.out' -delete
       - task: clean-build
 
   clean-build:
@@ -84,8 +83,14 @@ tasks:
       - test -f {{.DIST_TARGET_FILE}}
     cmds:
       - rm -f {{.DIST_TARGET_FILE}}
-      - rm test/zeget.1 || true 
+      - rm test/zeget.1 || true
       - rm test/{fd,micro,nvim,pandoc,rg.exe} || true
+
+  # remove all coverageprofile.out files:
+  clean-coverage:
+    desc: Removes all coverageprofile.out files
+    cmds:
+      - find . -name 'coverage*.out' -delete
 
   lint:
     desc: 'Lints the code with golangci-lint and optionally: actionlint, shellcheck, typos'
@@ -129,12 +134,6 @@ tasks:
       - gingko bootstrap
       - sh -c '/bin/ls -1 lib | xargs printf "cd lib/%s && ginkgo bootstrap; cd ../..;\n " | bash'
       - sh -c 'cd app && ginkgo bootstrap; cd ..'
-
-  # remove all coverageprofile.out files:
-  clean-coverage:
-    desc: Removes all coverageprofile.out files
-    cmds:
-      - find . -name 'coverage*.out' -delete
 
   autobuild:
     interactive: true

@@ -40,6 +40,12 @@ func NewClient(token string) *Client {
 	return result
 }
 
+func (dc *Client) SetTokenFromEnv() *Client {
+	dc.SetToken(os.Getenv("GITHUB_TOKEN"))
+
+	return dc
+}
+
 func (dc *Client) GetTokenType() string {
 	return dc.tokenType
 }
@@ -134,6 +140,18 @@ func (dc *Client) GetJSON(url string) (*http.Response, error) {
 }
 
 func (dc *Client) GetBinaryFile(url string) (*http.Response, error) {
+
+	// err := client.DownloadSmart(url, f, func(size int64)*pb.ProgressBar {
+	//     bar := pb.Full.Start64(size)
+	//     bar.Set(pb.Bytes, true)
+	//     return bar
+	// }, 8)
+
+	// dc.DownloadSmart(url, f, func(size int64) *pb.ProgressBar {
+	// 	// bar := pb.Full.Start64(size)
+	// 	// bar.Set(pb.Bytes, true)
+	// 	return nil
+	// }, 8)
 	return dc.
 		SetAccept(AcceptBinary).
 		Get(url)

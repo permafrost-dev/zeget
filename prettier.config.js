@@ -10,12 +10,12 @@ const overrides = [
         options: {
             parser: 'json',
             tabWidth: 4,
-            printWidth: 160,
+            printWidth: 200,
         },
     },
 ];
 
-module.exports = {
+export default {
     arrowParens: 'avoid',
     bracketSameLine: true,
     bracketSpacing: true,
@@ -23,7 +23,7 @@ module.exports = {
     insertPragma: false,
     jsxSingleQuote: false,
     overrides,
-    printWidth: 160,
+    printWidth: 200,
     proseWrap: 'preserve',
     quoteProps: 'as-needed',
     requirePragma: false,

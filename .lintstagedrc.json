@@ -1,10 +1,7 @@
 {
-    "*.{html,json,css,scss,gql,js,ts,jsx,tsx,cjs,mjs}": [
-        "bunx prettier --config ./prettier.config.cjs --write"
-    ],
-    "*.{yaml,yml}": [
-        "bunx prettier --config ./prettier.config.cjs --tab-width 2 --write"
-    ],
+    "*.{html,json,css,scss,gql,js,ts,jsx,tsx,cjs,mjs}": ["bunx prettier --config ./prettier.config.js --write"],
+    "*.{yaml,yml}": ["bunx prettier --config ./prettier.config.js --tab-width 2 --write"],
+    "*.py": ["ruff format --respect-gitignore --line-length 180 --target-version py12"],
     "*.go": ["gofmt -w"],
     "*.md": ["bunx markdownlint-cli2 --fix"]
 }

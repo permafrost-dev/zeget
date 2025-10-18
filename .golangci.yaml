@@ -1,51 +1,56 @@
+version: "2"
 run:
-  timeout: 15s
-  modules-download-mode: readonly
-
-  # Include test files or not. Default: true
-  tests: true
-
-  allow-parallel-runners: true
   concurrency: 8
-
+  modules-download-mode: readonly
+  tests: true
+  allow-parallel-runners: true
 linters:
-  disable-all: true
-  fast: true
+  default: none
   enable:
     - gocyclo
     - govet
-    #- maintidx
+    - maintidx
     - misspell
+    - unparam
     - unused
-
+  settings:
+    funlen:
+      lines: 100
+      statements: 80
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
+    gocyclo:
+      min-complexity: 30
+    gosec:
+      severity: medium
+      config:
+        G301: "0755"
+        G302: "0644"
+        G306: "0644"
+    maintidx:
+      under: 25
+    misspell:
+      locale: US
+    nestif:
+      min-complexity: 4
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 severity:
-  default-severity: warning
-  case-sensitive: false
-
-linters-settings:
-  gocyclo:
-    min-complexity: 30
-
-  funlen:
-    lines: 100
-    statements: 80
-
-  gocritic:
-    disabled-checks:
-      - exitAfterDefer
-
-  gosec:
-    severity: medium
-    config:
-      G301: "0755" # Maximum allowed permissions mode for os.Mkdir and os.MkdirAll - Default: "0750"
-      G302: "0644" # Maximum allowed permissions mode for os.OpenFile and os.Chmod - Default: "0600"
-      G306: "0644" # Maximum allowed permissions mode for os.WriteFile and ioutil.WriteFile - Default: "0600"
-
-  maintidx:
-    under: 30
-
-  misspell:
-    locale: US
-
-  nestif:
-    min-complexity: 4  # Minimal complexity of if statements to report. - Default: 5
+  default: warning
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

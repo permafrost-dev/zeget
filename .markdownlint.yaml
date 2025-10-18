@@ -1,6 +1,4 @@
 default: true
-extends: null
-
 first-line-heading: false
 
 no-hard-tabs: true
@@ -22,7 +20,3 @@ ul-indent:
 list-marker-space:
   ul_single: 1
   ul_multi: 1
-
-MD013: false # line length
-MD033: false # inline HTML
-MD034: false # bare URLs

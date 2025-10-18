@@ -11,8 +11,8 @@ on:
     types: [opened, edited]
 
 env:
-  GO_VERSION: "~1.23"
-  GO111MODULE: "on"
+  GO_VERSION: '~1.25'
+  GO111MODULE: 'on'
 
 jobs:
   test-build:
@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: go.mod
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: actions/cache@v4
         id: cache-go-packages
@@ -45,7 +45,7 @@ jobs:
         run: task build
 
       - name: Run functional test
-        env: 
+        env:
           ZEGET_CONFIG: ./zeget.toml
           ZEGET_BIN: ''
           TEST_ZEGET: ../dist/zeget
@@ -75,13 +75,13 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-        
+
       - name: Install ginkgo
         run: go install github.com/onsi/ginkgo/v2/ginkgo
 
       - name: generate ginkgo bootstrap files
         run: task ginkgo-bootstrap
-          
+
       - name: Run unit tests with coverage
         run: go test -coverprofile ./coverprofile.out -v ./lib/**
         # fails when paths includes ./app, with "/tmp/go-build1618233511/b360/gocoverdir" inaccessible

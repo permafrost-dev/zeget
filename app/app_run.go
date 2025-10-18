@@ -5,7 +5,6 @@ import (
 	"time"
 
 	. "github.com/permafrost-dev/zeget/lib/assets"
-	"github.com/permafrost-dev/zeget/lib/reporters"
 	"github.com/permafrost-dev/zeget/lib/utilities"
 	. "github.com/permafrost-dev/zeget/lib/utilities"
 )
@@ -52,27 +51,21 @@ func (app *Application) Run() *ReturnStatus {
 		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	if result := app.FilterDetectedAssets(detected, findResult); result != nil {
-		return result
+	if err := app.FilterDetectedAssets(detected, findResult, assetWrapper); err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	assetWrapper.Asset = &detected.Asset
-
-	if len(detected.Candidates) != 0 {
-		assetWrapper.Asset, err = app.selectFromMultipleAssets(detected.Candidates, err) // manually select which asset to download
-		if err != nil {
-			return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
-		}
+	if err := app.HandleMultipleCandidates(detected, assetWrapper); err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	body, result := app.DownloadAndVerify(assetWrapper, findResult)
-	if result != nil {
-		return result
+	body, err := app.DownloadAndVerify(assetWrapper, findResult)
+	if err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
-	extractedCount, result := app.ExtractDownloadedAsset(assetWrapper, body, finder)
-	if result != nil {
-		return result
+	if err := app.ExtractDownloadedAsset(assetWrapper, body, finder); err != nil {
+		return NewReturnStatus(FatalError, err, fmt.Sprintf("error: %v", err))
 	}
 
 	cacheItem.Filters = assetWrapper.Asset.Filters
@@ -81,9 +74,5 @@ func (app *Application) Run() *ReturnStatus {
 	cacheItem.LastDownloadHash = utilities.CalculateStringHash(string(body))
 	cacheItem.Save()
 
-	if app.Opts.Verbose {
-		reporters.NewMessageReporter(app.Output, "number of extracted files: %d\n", extractedCount).Report()
-	}
-
-	return NewReturnStatus(Success, nil, fmt.Sprintf("extracted files: %d", extractedCount))
+	return NewReturnStatus(Success, nil, fmt.Sprintf("successfully downloaded and extracted files"))
 }
